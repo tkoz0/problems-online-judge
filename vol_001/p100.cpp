@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 {
     u32 a, b;
 
-    // cache to speed up computation, stores sequence lengths from starting nums
+    // cache to speed up computation, index i stores 0 or its sequence length
     u32 *cache = (u32*) calloc(CACHE_SIZE, sizeof(u32));
     // place 1 in the cache as the initial "base case"
     cache[1] = 1;
