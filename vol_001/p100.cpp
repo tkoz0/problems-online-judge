@@ -58,4 +58,5 @@ int main(int argc, char **argv)
         printf("%u %u %u\n", a, b, longest);
     }
     free(cache);
+    return 0;
 }
