@@ -16,13 +16,18 @@ struct block_world
     {
         assert(num_blocks > 0 and num_blocks < 25);
         this->_num_blocks = num_blocks;
+        // the choice to use std::list is because multiple blocks will be moved
+        // for some commands, this can be done efficiently with splicing
         this->_piles = new std::list<u32>[this->_num_blocks];
+        // insert blocks into initial locations
+        for (u32 i = 0; i != this->_num_blocks; ++i)
+            this->_piles[i].push_back(i);
     }
     ~block_world() { delete[] this->_piles; }
     void print_world() const
     {
         // for each pile
-        for (u32 i = 0; i < this->_num_blocks; ++i)
+        for (u32 i = 0; i != this->_num_blocks; ++i)
         {
             printf("%u:", i);
             for (auto itr = this->_piles[i].cbegin();
@@ -31,12 +36,15 @@ struct block_world
             printf("\n");
         }
     }
+    typedef std::pair<u32, std::list<u32>::const_iterator> blockpos;
     // locate a block, O(n) time, return pile index and iterator to the block
-    std::pair<u32, std::list<u32>::const_iterator> _find_block(u32 block) const
+    blockpos _find_block(u32 block) const
     {
         assert(block < this->_num_blocks);
+        // search each pile
         for (u32 i = 0; i < this->_num_blocks; ++i)
         {
+            // find block in pile
             for (auto itr = this->_piles[i].cbegin();
                     itr != this->_piles[i].cend(); ++itr)
                 // found block
@@ -46,11 +54,12 @@ struct block_world
         assert(0); // should never reach here
     }
     // blocks above are moved to original positions
-    void _above_to_original(std::pair<u32, std::list<u32>::const_iterator> loc)
+    void _above_to_original(blockpos loc)
     {
         assert(loc.first < this->_num_blocks);
         assert(loc.second != this->_piles[loc.first].end());
         ++loc.second;
+        // remove blocks from pile and return to original locations
         while (loc.second != this->_piles[loc.first].end())
         {
             assert(*loc.second < this->_num_blocks);
@@ -58,21 +67,61 @@ struct block_world
             loc.second = this->_piles[loc.first].erase(loc.second);
         }
     }
+    // returns true if a and b are in different piles
+    // sets 2 block positions (of a and b)
+    bool _dif_piles(u32 a, u32 b, blockpos *posa, blockpos *posb)
+    {
+        assert(a < this->_num_blocks and b < this->_num_blocks);
+        // operation invalid if blocks are in the same pile
+        if (a == b) return false;
+        blockpos bpa = this->_find_block(a);
+        blockpos bpb = this->_find_block(b);
+        if (bpa.first == bpb.first) return false;
+        *posa = bpa;
+        *posb = bpb;
+        return true;
+    }
+    // return blocks above a and b to original positions, then move a onto b
     void move_onto(u32 a, u32 b)
     {
-        printf("not implemented\n");
+        blockpos bpa, bpb;
+        if (!this->_dif_piles(a, b, &bpa, &bpb)) return;
+        this->_above_to_original(bpa);
+        this->_above_to_original(bpb);
+        this->_piles[bpb.first].push_back(*bpa.second);
+        this->_piles[bpa.first].pop_back(); // block a is at top of pile
     }
+    // return blocks above a to original positions, then move a over b
     void move_over(u32 a, u32 b)
     {
-        printf("not implemented\n");
+        blockpos bpa, bpb;
+        if (!this->_dif_piles(a, b, &bpa, &bpb)) return;
+        this->_above_to_original(bpa);
+        this->_piles[bpb.first].push_back(*bpa.second);
+        this->_piles[bpa.first].pop_back();
     }
+    // blocks above b to original, a and blocks above it onto pile b
     void pile_onto(u32 a, u32 b)
     {
-        printf("not implemented\n");
+        blockpos bpa, bpb;
+        if (!this->_dif_piles(a, b, &bpa, &bpb)) return;
+        this->_above_to_original(bpb);
+        while (bpa.second != this->_piles[bpa.first].end())
+        {
+            this->_piles[bpb.first].push_back(*bpa.second);
+            bpa.second = this->_piles[bpa.first].erase(bpa.second);
+        }
     }
+    // a and blocks above it over pile b
     void pile_over(u32 a, u32 b)
     {
-        printf("not implemented\n");
+        blockpos bpa, bpb;
+        if (!this->_dif_piles(a, b, &bpa, &bpb)) return;
+        while (bpa.second != this->_piles[bpa.first].end())
+        {
+            this->_piles[bpb.first].push_back(*bpa.second);
+            bpa.second = this->_piles[bpa.first].erase(bpa.second);
+        }
     }
 };
 
@@ -116,6 +165,11 @@ int main(int argc, char **argv)
                 bw.pile_over(i1, i2);
             }
         }
+        static int tmp = 0;
+//        printf("\nstep %u: %4s %u %4s %u\n",++tmp,w1,i1,w2,i2);
+//        bw.print_world();
     }
     assert(strcmp(w1, "quit") == 0);
+    bw.print_world();
+    return 0;
 }
