@@ -43,7 +43,7 @@ int main(int argc, char **argv)
                 if (i & 1) // odd
                 {
                     // limit to prevent integer overflow
-//                    assert(i < 1431655765);
+                    assert(i < 1431655765);
                     i = 3 * i + 1;
                     ++len;
                 }
