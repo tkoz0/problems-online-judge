@@ -7,6 +7,7 @@
 #include <list>
 
 typedef uint32_t u32;
+#define MOST_BLOCKS 25
 
 struct block_world
 {
@@ -14,7 +15,7 @@ struct block_world
     std::list<u32> *_piles;
     block_world(u32 num_blocks)
     {
-        assert(num_blocks > 0 and num_blocks < 25);
+        assert(num_blocks > 0 and num_blocks < MOST_BLOCKS);
         this->_num_blocks = num_blocks;
         // the choice to use std::list is because multiple blocks will be moved
         // for some commands, this can be done efficiently with splicing

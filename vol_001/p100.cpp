@@ -5,6 +5,7 @@
 
 typedef uint32_t u32;
 #define CACHE_SIZE 1000000
+#define U32_MAX_SAFE_3N_1 1431655765
 
 int main(int argc, char **argv)
 {
@@ -43,7 +44,7 @@ int main(int argc, char **argv)
                 if (i & 1) // odd
                 {
                     // limit to prevent integer overflow
-                    assert(i < 1431655765);
+                    assert(i < U32_MAX_SAFE_3N_1);
                     i = 3 * i + 1;
                     ++len;
                 }
