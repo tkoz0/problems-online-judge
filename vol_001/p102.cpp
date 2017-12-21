@@ -33,4 +33,5 @@ int main(int argc, char **argv)
         // output
         printf("%s %u\n", orders[i], moved[i]);
     }
+    return 0;
 }
