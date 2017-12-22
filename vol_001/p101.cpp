@@ -70,7 +70,7 @@ struct block_world
     }
     // returns true if a and b are in different piles
     // sets 2 block positions (of a and b)
-    bool _dif_piles(u32 a, u32 b, blockpos *posa, blockpos *posb)
+    bool _dif_piles(u32 a, u32 b, blockpos *posa, blockpos *posb) const
     {
         assert(a < this->_num_blocks and b < this->_num_blocks);
         // operation invalid if blocks are in the same pile
