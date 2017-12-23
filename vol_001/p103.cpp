@@ -12,27 +12,40 @@ typedef uint32_t u32;
 struct box_set
 {
     // d and n for current number of dimensions and boxes respectively
+    struct box { u32 num; u32 *dims; };
     u32 _max_dims, _max_boxes, _d, _n;
-    u32 **_boxes;
+    box *_boxes;
+    bool **_nest;
     box_set(u32 max_boxes, u32 max_dims)
     {
         this->_max_boxes = max_boxes;
         this->_max_dims = max_dims;
         this->_d = this->_n = 0;
-        // allocate maximum space needed
-        this->_boxes = (u32**) malloc(this->_max_boxes * sizeof(u32*));
-        for (u32 **p = this->_boxes; p != this->_boxes + this->_max_boxes; ++p)
-            *p = (u32*) malloc(this->_max_dims * sizeof(u32));
+        // allocate most space needed for box storage
+        this->_boxes = (box*) malloc(this->_max_boxes * sizeof(box));
+        u32 box_i = 1;
+        // for each box, set box id and allocate space for dimension lengths
+        for (box *p = this->_boxes; p != this->_boxes + this->_max_boxes; ++p)
+        {
+            p->num = box_i++;
+            p->dims = (u32*) malloc(this->_max_dims * sizeof(u32));
+        }
+        // generate uninitialized nesting table
+        this->_nest = (bool**) malloc(this->_max_boxes * sizeof(bool*));
+        for (bool **b = this->_nest; b != this->_nest + this->_max_boxes; ++b)
+            *b = (bool*) malloc(this->_max_boxes * sizeof(bool));
     }
     ~box_set()
     {
-        // iterate all dynamic memory and free it
-        for (u32 **p = this->_boxes; p != this->_boxes + this->_max_boxes; ++p)
-            free(*p);
+        for (box *p = this->_boxes; p != this->_boxes + this->_max_boxes; ++p)
+            free(p->dims);
         free(this->_boxes);
+        for (bool **b = this->_nest; b != this->_nest + this->_max_boxes; ++b)
+            free(*b);
+        free(b);
     }
     // returns true if another set of boxes is read successfully from stdin
-    // no memory reallocation, overwrites 2d array with box data
+    // no memory reallocation, overwrites with new box data
     // number of boxes and dims in this set stored, extra data is "garbage"
     bool read_boxes()
     {
@@ -45,55 +58,80 @@ struct box_set
         this->_n = num;
         this->_d = dim;
         // read 1 box per line
-        for (u32 **b = this->_boxes; b != this->_boxes + this->_n; ++b)
-            // read each dimension from this box
-            for (u32 *d = *b; d != *b + this->_d; ++d)
+        for (box *b = this->_boxes; b != this->_boxes + this->_n; ++b)
+            for (u32 *d = b->dims; d != b->dims + this->_d; ++d)
                 if (!scanf("%u", d)) return false;
         return true;
     }
     void _debug_print_boxes() const
     {
-        for (u32 b = 0; b != this->_n; ++b)
+        for (box *b = this->_boxes; b != this->_boxes + this->_n; ++b)
         {
-            printf("box %02u:", b + 1);
-            for (u32 *d = this->_boxes[b]; d != this->_boxes[b] + this->_d; ++d)
+            printf("box %02u:", b->num);
+            for (u32 *d = b->dims; d != b->dims + this->_d; ++d)
                 printf(" %u", *d);
             printf("\n");
         }
     }
-    // requires O(n*d*logd + n*logn) time
-    // should work fine if *x and *y are 31 bit (0 to 2^31-1)
-    // <0 means x before y
+    // comparison function for qsort, 2 integers
+    // this should work if *x and *y are in range 0 to 2^31-1, <0 = x before y
     static inline int _cmp_u32(const void *x, const void *y)
     {
-        return *((int32_t*) x) - *((int32_t*) y);
+        return *((const int32_t*) x) - *((const int32_t*) y);
     }
-    // compares 2 u32* arrays (2 boxes) to sort by 1st dim, then 2nd, etc
-    // uses a static variable to allow a 3rd argument (length of arrays)
-    static u32 __cmpdims;
-    static inline int _cmp_u32p(const void *x, const void *y)
+    // comparing the u32* arrays from 2 boxes, sort by 1st dim, 2nd, etc
+    // this static variable is to "hack" a 3rd argument (length of dimensions)
+    static u32 __cmp_dims;
+    static inline int _cmp_box(const void *x, const void *y)
     {
-        const u32 *end = *(const u32**) x + box_set::__cmpdims;
-        const u32 *xx = *(const u32**) x, *yy = *(const u32**) y;
+        const u32 *end = ((const box*) x)->dims + box_set::__cmp_dims;
+        const u32 *xx = ((const box*) x)->dims, *yy = ((const box*) y)->dims;
         for (; xx != end; ++xx, ++yy)
             if (*xx != *yy)
                 return (int32_t) (*xx - *yy);
-        return 0;
+        return 0; // equivalent if all dimensions equal
     }
+    // takes O(n*d*logd) time for 1st step and O(n*logn) for 2nd step
     void sort_boxes()
     {
-        // sort dimensions in each box
-        for (u32 **b = this->_boxes; b != this->_boxes + this->_n; ++b)
-            qsort(*b, this->_d, sizeof(**b), &this->_cmp_u32);
-        // store 3rd argument in static variable, then sort boxes
-        box_set::__cmpdims = this->_d;
-        qsort(this->_boxes, this->_n,
-                sizeof(*this->_boxes), &this->_cmp_u32p);
+        // first sort dimensions within each box
+        for (box *b = this->_boxes; b != this->_boxes + this->_n; ++b)
+            qsort(b->dims, this->_d, sizeof(u32), &this->_cmp_u32);
+        // store 3rd argument and sort boxes
+        box_set::__cmp_dims = this->_d;
+        qsort(this->_boxes, this->_n, sizeof(box_set::box), &this->_cmp_box);
+    }
+    inline bool _fits_in(box *a, box *b) const
+    {
+        u32 *end = a->dims + this->_d;
+        u32 *aa = a->dims, *bb = b->dims;
+        // if dimensions of a and b are sorted, a does not fit in b if there is
+        // a pair of corresponding dimensions a_i and b_i such that a_i >= b_i
+        for (; aa != end; ++aa, ++bb)
+            if (*aa >= *bb)
+                return false;
+        return true;
+    }
+    // generate the table to determine if boxes nest within each other
+    // uses box indexes (after sorting)
+    void gen_nest_table()
+    {
+        box *ba = this->_boxes;
+        bool **na = this->_nest;
+        // loop over 1st box and nest table row
+        for (; ba != this->_boxes + this->_n; ++ba, ++na)
+        {
+            box *bb = this->_boxes;
+            bool *nb = *na;
+            // loop over 2nd box and nest table column in this nest table row
+            for (; bb != this->_boxes + this->_n; ++bb, ++nb)
+                *nb = this->_fits_in(ba, bb);
+        }
     }
 };
 
 // static member var to "hack" qsort to allow a 3rd argument in comparison
-u32 box_set::__cmpdims = 0;
+u32 box_set::__cmp_dims = 0;
 
 int main(int argc, char **argv)
 {
@@ -102,6 +140,7 @@ int main(int argc, char **argv)
     {
         bs._debug_print_boxes();
         bs.sort_boxes();
+        bs.gen_nest_table();
         bs._debug_print_boxes();
     }
     return 0;
