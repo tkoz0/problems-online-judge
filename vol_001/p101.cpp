@@ -11,6 +11,8 @@ typedef uint32_t u32;
 
 struct block_world
 {
+    // typedef for block position, a list iterator
+    typedef std::pair<u32, std::list<u32>::const_iterator> blockpos;
     u32 _num_blocks;
     std::list<u32> *_piles;
     block_world(u32 num_blocks)
@@ -37,7 +39,6 @@ struct block_world
             printf("\n");
         }
     }
-    typedef std::pair<u32, std::list<u32>::const_iterator> blockpos;
     // locate a block, O(n) time, return pile index and iterator to the block
     blockpos _find_block(u32 block) const
     {
