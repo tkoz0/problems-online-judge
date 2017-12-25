@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <algorithm>
-
 typedef uint32_t u32;
 #define MAX_BOXES 30
 #define MAX_DIMS 10
@@ -23,13 +21,10 @@ struct box_set
         this->_d = this->_n = 0;
         // allocate most space needed for box storage
         this->_boxes = (box*) malloc(this->_max_boxes * sizeof(box));
-        u32 box_i = 1;
         // for each box, set box id and allocate space for dimension lengths
         for (box *p = this->_boxes; p != this->_boxes + this->_max_boxes; ++p)
-        {
-            p->num = box_i++;
             p->dims = (u32*) malloc(this->_max_dims * sizeof(u32));
-        }
+        // box->num left uninitialized, to be initialized by read_boxes()
         // generate uninitialized nesting table
         this->_nest = (bool**) malloc(this->_max_boxes * sizeof(bool*));
         for (bool **b = this->_nest; b != this->_nest + this->_max_boxes; ++b)
@@ -49,7 +44,7 @@ struct box_set
     // number of boxes and dims in this set stored, extra data is "garbage"
     bool read_boxes()
     {
-        u32 num, dim;
+        u32 num, dim, box_num = 0;
         // first line has num boxes and num dimensions
         if (scanf("%u %u", &num, &dim) != 2) return false;
         // problem detail specifies there will be 1-10 dims and 30 boxes max
@@ -59,8 +54,11 @@ struct box_set
         this->_d = dim;
         // read 1 box per line
         for (box *b = this->_boxes; b != this->_boxes + this->_n; ++b)
+        {
+            b->num = ++box_num; // number identifying the box (1...n)
             for (u32 *d = b->dims; d != b->dims + this->_d; ++d)
                 if (!scanf("%u", d)) return false;
+        }
         return true;
     }
     void _debug_print_boxes(const char *str) const
@@ -115,6 +113,7 @@ struct box_set
     }
     // generate the table to determine if boxes nest within each other
     // uses box indexes (after sorting)
+    // requires about O(n^2) time, O(d*n^2) at worst
     void gen_nest_table()
     {
         box *ba = this->_boxes;
