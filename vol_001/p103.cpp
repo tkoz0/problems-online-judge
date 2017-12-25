@@ -63,8 +63,9 @@ struct box_set
                 if (!scanf("%u", d)) return false;
         return true;
     }
-    void _debug_print_boxes() const
+    void _debug_print_boxes(const char *str) const
     {
+        printf("%s\n", str);
         for (box *b = this->_boxes; b != this->_boxes + this->_n; ++b)
         {
             printf("box %02u:", b->num);
@@ -128,6 +129,17 @@ struct box_set
                 *nb = this->_fits_in(ba, bb);
         }
     }
+    void _debug_print_nest_table(const char *str) const
+    {
+        printf("%s\n", str);
+        for (bool **na = this->_nest; na != this->_nest + this->_n; ++na)
+        {
+            bool *nb = *na;
+            for (; nb != *na + this->_n - 1; ++nb)
+                printf("%i ", *nb);
+            printf("%i\n", *nb);
+        }
+    }
 };
 
 // static member var to "hack" qsort to allow a 3rd argument in comparison
@@ -138,10 +150,11 @@ int main(int argc, char **argv)
     box_set bs(MAX_BOXES, MAX_DIMS);
     while (bs.read_boxes())
     {
-        bs._debug_print_boxes();
+        bs._debug_print_boxes("initial");
         bs.sort_boxes();
         bs.gen_nest_table();
-        bs._debug_print_boxes();
+        bs._debug_print_boxes("sorted");
+        bs._debug_print_nest_table("nest table");
     }
     return 0;
 }
