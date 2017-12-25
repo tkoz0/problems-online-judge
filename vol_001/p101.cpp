@@ -167,7 +167,7 @@ int main(int argc, char **argv)
                 bw.pile_over(i1, i2);
             }
         }
-        static int tmp = 0;
+//        static int tmp = 0;
 //        printf("\nstep %u: %4s %u %4s %u\n",++tmp,w1,i1,w2,i2);
 //        bw.print_world();
     }

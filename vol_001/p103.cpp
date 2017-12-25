@@ -42,7 +42,7 @@ struct box_set
         free(this->_boxes);
         for (bool **b = this->_nest; b != this->_nest + this->_max_boxes; ++b)
             free(*b);
-        free(b);
+        free(this->_nest);
     }
     // returns true if another set of boxes is read successfully from stdin
     // no memory reallocation, overwrites with new box data
