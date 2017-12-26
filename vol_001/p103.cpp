@@ -14,6 +14,10 @@ struct box_set
     u32 _max_dims, _max_boxes, _d, _n;
     box *_boxes;
     bool **_nest;
+    // used for recursive solution
+    u32 *_path;
+    u32 *_lpath;
+    u32 _longest;
     box_set(u32 max_boxes, u32 max_dims)
     {
         this->_max_boxes = max_boxes;
@@ -29,6 +33,9 @@ struct box_set
         this->_nest = (bool**) malloc(this->_max_boxes * sizeof(bool*));
         for (bool **b = this->_nest; b != this->_nest + this->_max_boxes; ++b)
             *b = (bool*) malloc(this->_max_boxes * sizeof(bool));
+        // allocate memory for recursive solution
+        this->_path = (u32*) malloc(this->_max_boxes * sizeof(u32));
+        this->_lpath = (u32*) malloc(this->_max_boxes * sizeof(u32));
     }
     ~box_set()
     {
@@ -38,6 +45,8 @@ struct box_set
         for (bool **b = this->_nest; b != this->_nest + this->_max_boxes; ++b)
             free(*b);
         free(this->_nest);
+        free(this->_path);
+        free(this->_lpath);
     }
     // returns true if another set of boxes is read successfully from stdin
     // no memory reallocation, overwrites with new box data
@@ -141,6 +150,78 @@ struct box_set
             printf("%i\n", *nb);
         }
     }
+    void _debug_print_path(u32 len) const
+    {
+        for (u32 *n = this->_path; n != this->_path + len; ++n)
+            printf("%u ", *n);
+        printf("\n");
+    }
+    // _path and _lpath for current and longest path found respectively
+    // _longest saves length of longest found path
+    // recurses through sorted data as a directed acyclic graph
+    void _recurse(u32 pi)
+    {
+//        this->_debug_print_path(pi + 1);
+        // current path length = pi + 1
+        u32 needed;
+        bool any_next = false; // if any further recursed paths
+        if (pi + 1 >= this->_longest) needed = 0;
+        else needed = this->_longest - pi;
+        bool *nestp = this->_nest[this->_path[pi]];
+        u32 next_bi = this->_path[pi] + 1; // next box
+        nestp += next_bi; // boolean to determine nesting
+        // loop while a longer path is possible
+        for (; next_bi + needed < this->_n; ++next_bi, ++nestp)
+        {
+            if (!*nestp) continue;
+            any_next = true;
+            // store next box and recurse
+            this->_path[pi + 1] = next_bi;
+            this->_recurse(pi + 1);
+        }
+        if (any_next) return;
+        if (pi >= this->_longest) // new longer path, copy
+        {
+            this->_longest = pi + 1;
+            u32 *p = this->_path, *lp = this->_lpath;
+            for (; p != this->_path + this->_longest; ++p, ++lp)
+                *lp = *p;
+            return;
+        }
+        if (pi + 1 == this->_longest) // equal length, use lexicographic order
+        {
+            u32 *p = this->_path, *lp = this->_lpath;
+            for (; p != this->_path + this->_longest; ++p, ++lp)
+            {
+                if (*p == *lp) continue; // equal
+                // this path comes after lexicographically
+                if (this->_boxes[*p].num > this->_boxes[*lp].num) return;
+                // copy path
+                p = this->_path, lp = this->_lpath;
+                for (; p != this->_path + this->_longest; ++p, ++lp)
+                    *lp = *p;
+                return;
+            }
+        }
+    }
+    void find_longest_recursive()
+    {
+        if (!this->_n) return; // do not attempt if box set is empty
+        this->_longest = 0;
+        *this->_path = 0;
+        // avoid looping past the point where a longer sequence cant be found
+        for (u32 start = 0; start + this->_longest <= this->_n;
+                ++start, ++*this->_path)
+            this->_recurse(0);
+        assert(this->_longest); // path length should be at least 1 box
+        printf("%u\n", this->_longest); // path len on line by itself
+        u32 *p = this->_lpath;
+        // print path, first separately to avoid extra space
+        printf("%u", this->_boxes[*p].num);
+        for (++p; p != this->_lpath + this->_longest; ++p)
+            printf(" %u", this->_boxes[*p].num);
+        printf("\n");
+    }
 };
 
 // static member var to "hack" qsort to allow a 3rd argument in comparison
@@ -151,11 +232,12 @@ int main(int argc, char **argv)
     box_set bs(MAX_BOXES, MAX_DIMS);
     while (bs.read_boxes())
     {
-        bs._debug_print_boxes("initial");
+//        bs._debug_print_boxes("initial");
         bs.sort_boxes();
         bs.gen_nest_table();
-        bs._debug_print_boxes("sorted");
-        bs._debug_print_nest_table("nest table");
+//        bs._debug_print_boxes("sorted");
+//        bs._debug_print_nest_table("nest table");
+        bs.find_longest_recursive();
     }
     return 0;
 }
