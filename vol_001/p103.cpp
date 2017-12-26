@@ -82,11 +82,12 @@ struct box_set
         }
     }
     // comparison function for qsort, 2 integers
-    // this should work if *x and *y are in range 0 to 2^31-1, <0 = x before y
+    // <0=right order, >0=wrong order, 0=equivalent
     static inline int _cmp_u32(const void *x, const void *y)
     {
-        // return 1 if they are out of order (>0 = wrong order), 0 otherwise
-        return *((const u32*) x) > *((const u32*) y);
+        if (*((const u32*) x) < *((const u32*) y)) return -1;
+        if (*((const u32*) x) > *((const u32*) y)) return 1;
+        return 0;
     }
     // comparing the u32* arrays from 2 boxes, sort by 1st dim, 2nd, etc
     // this static variable is to "hack" a 3rd argument (length of dimensions)
@@ -96,10 +97,17 @@ struct box_set
         const u32 *end = ((const box*) x)->dims + box_set::__cmp_dims;
         const u32 *xx = ((const box*) x)->dims, *yy = ((const box*) y)->dims;
         for (; xx != end; ++xx, ++yy)
-            if (*xx != *yy)
-                return *xx > *yy; // similar to _cmp_u32
+            if (*xx != *yy) // ignore equivalent values
+            {
+                if (*xx < *yy) return -1;
+                return 1;
+                // similar to _cmp_u32
+            }
         // if equivalent, use box ids
-        return ((const box*) x)->num > ((const box*) y)->num;
+        // should not have to worry about box numbers being equal
+        // qsort should not compare the same box to itself
+        if (((const box*) x)->num < ((const box*) y)->num) return -1;
+        return 1;
     }
     // takes O(n*d*logd) time for 1st step and O(n*logn) for 2nd step
     void sort_boxes()
