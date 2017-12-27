@@ -230,6 +230,38 @@ struct box_set
             printf(" %u", this->_boxes[*p].num);
         printf("\n");
     }
+    // lpath = longest that can be made, path = next one to create longest path
+    // if path array has 0 then it means path is terminated
+    void find_longest_dynamic()
+    {
+        ;
+        // TODO all below is wrong, rewrite, must consider nesting table
+        u32 *p = this->_path + this->_n, *lp = this->_path + this->_n;
+        box *b = this->_boxes + this->_n;
+        --p, --lp, --b;
+        *p = 0, *lp = 1; // start initially at the end, last box makes path of 1
+        for (; p-- != this->_path; )
+        {
+            // find longest path this box can make
+            // choose the smallest box number from all that are equal
+            // copy pointers, decrement box pointer and path len pointer
+            box *bb = b--;
+            u32 *lpc = lp--;
+            u32 bnum = bb->num; // save box number to find smallest
+            *p = lpc - this->_lpath;
+            *lp = 1 + *lpc;
+            while (++bb != this->_boxes + this->_n)
+            {
+                ++lpc;
+                if (*lpc > *lp || (*lpc == *lp and bb->num < bnum))
+                {
+                    *p = lpc - this->_lpath;
+                    *lp = 1 + *lpc;
+                    bnum = bb->num;
+                }
+            }
+        }
+    }
 };
 
 // static member var to "hack" qsort to allow a 3rd argument in comparison
