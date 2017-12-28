@@ -14,7 +14,7 @@ struct box_set
     u32 _max_dims, _max_boxes, _d, _n;
     box *_boxes;
     bool **_nest;
-    // used for recursive solution
+    // used for solutions
     u32 *_path;
     u32 *_lpath;
     u32 _longest;
@@ -234,33 +234,57 @@ struct box_set
     // if path array has 0 then it means path is terminated
     void find_longest_dynamic()
     {
-        ;
-        // TODO all below is wrong, rewrite, must consider nesting table
-        u32 *p = this->_path + this->_n, *lp = this->_path + this->_n;
+        u32 *p = this->_path + this->_n, *lp = this->_lpath + this->_n;
+        bool **nr = this->_nest + this->_n; // row in nesting table
         box *b = this->_boxes + this->_n;
-        --p, --lp, --b;
-        *p = 0, *lp = 1; // start initially at the end, last box makes path of 1
-        for (; p-- != this->_path; )
+        --p, --lp, --nr, --b;
+        *p = 0, *lp = 1; // initial, last box path length 1, no next box
+        // p = next box of current, lp = max path len starting from current
+        // b = current box, nr = nest table row for current box
+        for (; p-- != this->_path;)
         {
-            // find longest path this box can make
-            // choose the smallest box number from all that are equal
-            // copy pointers, decrement box pointer and path len pointer
+            // out of possible next boxes current one fits into
+            // choose smallest numbered box with max path length
             box *bb = b--;
-            u32 *lpc = lp--;
-            u32 bnum = bb->num; // save box number to find smallest
-            *p = lpc - this->_lpath;
-            *lp = 1 + *lpc;
-            while (++bb != this->_boxes + this->_n)
+            u32 *lpc = lp--; // longest path iterator
+            *p = 0, *lp = 1; // initial conditions, if box cant nest in another
+            bool *nbox = *(--nr) + (bb - this->_boxes);
+//printf("ntablerow="); for (bool *bbb = nbox; bbb != *nr + this->_n; ++bbb) printf(" %u", *bbb); printf("\n");
+            u32 bnum = 0;
+            for (; bb != this->_boxes + this->_n; ++bb, ++nbox, ++lpc)
             {
-                ++lpc;
-                if (*lpc > *lp || (*lpc == *lp and bb->num < bnum))
+                if (!*nbox) continue; // does not nest
+                if (1 + *lpc > *lp or (1 + *lpc == *lp and bb->num < bnum))
                 {
-                    *p = lpc - this->_lpath;
-                    *lp = 1 + *lpc;
-                    bnum = bb->num;
+                    bnum = bb->num; // save box number
+                    *p = bb - this->_boxes; // index of next box
+                    *lp = 1 + *lpc; // length of path
                 }
             }
         }
+//printf("_path ="); for (u32 i = 0; i != this->_n; ++i) printf(" %u", _path[i]); printf("\n");
+//printf("_lpath ="); for (u32 i = 0; i != this->_n; ++i) printf(" %u", _lpath[i]); printf("\n");
+        // use p for start of path, lp as iterator over longest path
+        p = this->_path;
+        lp = this->_lpath;
+        b = this->_boxes;
+        u32 lplen = *(lp++);
+        u32 bnum = (b++)->num;
+        for (; lp != this->_lpath + this->_n; ++lp, ++b)
+            if (*lp > lplen or (*lp == lplen and b->num < bnum))
+            {
+                lplen = *lp;
+                bnum = b->num;
+                p = this->_path + (b - this->_boxes); // set start point
+            }
+        // write output
+        printf("%u\n%u", lplen, this->_boxes[p - this->_path].num);
+        while (*p) // continue until reaching end zero
+        {
+            printf(" %u", this->_boxes[*p].num);
+            p = this->_path + *p;
+        }
+        printf("\n");
     }
 };
 
@@ -277,7 +301,8 @@ int main(int argc, char **argv)
         bs.gen_nest_table();
 //        bs._debug_print_boxes("sorted");
 //        bs._debug_print_nest_table("nest table");
-        bs.find_longest_recursive();
+//        bs.find_longest_recursive();
+        bs.find_longest_dynamic();
     }
     return 0;
 }
