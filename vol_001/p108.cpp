@@ -6,6 +6,7 @@
 typedef uint32_t u32;
 typedef int32_t i32;
 
+// O(N^4), iterates start and end columns, sums down resetting if it becomes 0
 i32 solve1(i32 **arr, u32 N)
 {
     assert(N >= 1);
@@ -34,6 +35,39 @@ i32 solve1(i32 **arr, u32 N)
     return max;
 }
 
+// given a starting row, an increasing ending row is iterated across
+// the columns are summed into an array storing sums of each column
+// column sums are iterated to find maximum, running time is O(N^3)
+i32 solve2(i32 **arr, u32 N)
+{
+    assert(N >= 1);
+    i32 max = -128;
+    i32 *colsum = (i32*) malloc(N * sizeof(i32));
+    for (i32 **r1 = arr; r1 != arr + N; ++r1)
+    {
+        // zero initialize column sums
+        for (i32 *i = colsum; i != colsum + N; ++i) *i = 0;
+        for (i32 **r2 = r1; r2 != arr + N; ++r2)
+        {
+            // sum row2 values to colums
+            i32 *colpos = colsum;
+            for (i32 *n = *r2; n != *r2 + N; ++n, ++colpos)
+                *colpos += *n;
+            // find max sum through colpos
+            i32 sum = 0;
+            for (colpos = colsum; colpos != colsum + N; ++colpos)
+            {
+                sum += *colpos;
+                if (sum > max) max = sum;
+                if (sum < 0) sum = 0;
+            }
+        }
+    }
+    free(colsum);
+    assert(max != -128);
+    return max;
+}
+
 int main(int argc, char **argv)
 {
     u32 N;
@@ -57,7 +91,8 @@ int main(int argc, char **argv)
             assert(sf);
         }
     }
-    printf("%i\n", solve1(arr, N));
+//    printf("%i\n", solve1(arr, N));
+    printf("%i\n", solve2(arr, N));
     // free memory
     for (i32 **row = arr; row != arr + N; ++row)
         free(*row);
