@@ -13,7 +13,7 @@ i32 solve1(i32 **arr, u32 N)
     // choose a top side of the rectangle (x), then add rows going down (y)
     // reset the sum to zero if if becomes negative
     for (u32 x1 = 0; x1 != N; ++x1)
-        for (u32 x2 = x1 + 1; x2 != N; ++x2)
+        for (u32 x2 = x1 + 1; x2 <= N; ++x2)
         {
             i32 sum = 0;
             for (i32 **row = arr; row != arr + N; ++row)
