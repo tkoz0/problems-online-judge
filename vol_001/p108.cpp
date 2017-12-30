@@ -5,6 +5,7 @@
 
 typedef uint32_t u32;
 typedef int32_t i32;
+#define MAX_SIZE 100
 
 // O(N^4), iterates start and end columns, sums down resetting if it becomes 0
 i32 solve1(i32 **arr, u32 N)
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
     u32 N;
     int sf = scanf("%u\n", &N);
     assert(sf);
-    assert(N <= 100); // specification says N <= 100
+    assert(N <= MAX_SIZE); // specification says N <= 100
     assert(N); // shouldnt be zero
     // allocate array
     i32 **arr = (i32**) malloc(N * sizeof(i32*));
