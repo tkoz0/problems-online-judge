@@ -9,7 +9,7 @@ typedef uint32_t u32;
 
 struct box_set
 {
-    // d and n for current number of dimensions and boxes respectively
+    // _d and _n for current number of dimensions and boxes respectively
     struct box { u32 num; u32 *dims; };
     u32 _max_dims, _max_boxes, _d, _n;
     box *_boxes;
@@ -249,7 +249,6 @@ struct box_set
             u32 *lpc = lp--; // longest path iterator
             *p = 0, *lp = 1; // initial conditions, if box cant nest in another
             bool *nbox = *(--nr) + (bb - this->_boxes);
-//printf("ntablerow="); for (bool *bbb = nbox; bbb != *nr + this->_n; ++bbb) printf(" %u", *bbb); printf("\n");
             u32 bnum = 0;
             for (; bb != this->_boxes + this->_n; ++bb, ++nbox, ++lpc)
             {
@@ -262,8 +261,6 @@ struct box_set
                 }
             }
         }
-//printf("_path ="); for (u32 i = 0; i != this->_n; ++i) printf(" %u", _path[i]); printf("\n");
-//printf("_lpath ="); for (u32 i = 0; i != this->_n; ++i) printf(" %u", _lpath[i]); printf("\n");
         // use p for start of path, lp as iterator over longest path
         p = this->_path;
         lp = this->_lpath;
