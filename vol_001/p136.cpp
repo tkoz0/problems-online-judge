@@ -49,6 +49,6 @@ u32 compute1(u32 ugly_index)
 // ugly numbers, 1 included, otherwise only have prime factors 2,3,5
 int main(int argc, char **argv)
 {
-    printf("The 1500'th ugly number is %u.\n", compute1(UGLY_INDEX));
+    printf("The %u'th ugly number is %u.\n", UGLY_INDEX, compute1(UGLY_INDEX));
     return 0;
 }
