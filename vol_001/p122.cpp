@@ -161,8 +161,8 @@ void print_level_order(tree_node *root)
     printf("%i", root->n);
     // use std::queue for convenience
     std::queue<tree_node*> q;
-    q.push(root->l);
-    q.push(root->r);
+    if (root->l) q.push(root->l);
+    if (root->r) q.push(root->r);
     while (!q.empty()) // repeatedly pop and print value, push its children
     {
         printf(" %i", q.front()->n);
