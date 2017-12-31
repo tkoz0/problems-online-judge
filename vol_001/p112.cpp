@@ -39,7 +39,7 @@ tree_node* make_tree()
         result->l = make_tree(); // recursively create subtrees
         result->r = make_tree();
     }
-    else result = NULL; // empty tree
+    else result = nullptr; // empty tree
     c = next_ch();
     assert(c == ')'); // must end with )
     return result;
