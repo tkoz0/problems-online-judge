@@ -9,13 +9,6 @@
 typedef uint32_t u32;
 #define MODULUS 34943
 
-inline char hex(u32 num)
-{
-    if (num < 10) return '0' + num;
-    num -= 10;
-    return 'A' + num;
-}
-
 int main(int argc, char **argv)
 {
     std::string line;
