@@ -89,7 +89,7 @@ int main(int argc, char **argv)
         {
             sf = scanf("%i", col);
             assert(-127 <= *col and *col <= 127); // range specified
-            assert(sf);
+            assert(sf == 1);
         }
     }
 //    printf("%i\n", solve1(arr, N));
