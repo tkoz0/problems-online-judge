@@ -66,7 +66,7 @@ struct box_set
         {
             b->num = ++box_num; // number identifying the box (1...n)
             for (u32 *d = b->dims; d != b->dims + this->_d; ++d)
-                if (!scanf("%u", d)) return false;
+                if (scanf("%u", d) != 1) return false;
         }
         return true;
     }
