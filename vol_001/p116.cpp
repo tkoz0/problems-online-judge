@@ -8,6 +8,7 @@
 
 typedef uint32_t u32;
 typedef int32_t i32;
+typedef int64_t i64;
 
 #define MAX_ROW 10
 #define MAX_COL 100
@@ -18,23 +19,23 @@ void solve_backwards_dynamic(i32 **matr, u32 rows, u32 cols)
     if (rows == 1) // special case, only 1 possible path
     {
         // print path and sum numbers
-        i32 sum = 0;
+        i64 sum = **matr;
         printf("%u", 1); // first 1 (first column in path)
         for (i32 *cp = *matr + 1; cp != *matr + cols; ++cp)
         {
             sum += *cp;
             printf(" %u", 1);
         }
-        printf("\n%i\n", sum);
+        printf("\n%li\n", sum);
         return;
     }
     // at least 2 rows, allocate temporary space to store dynamic path sums
-    i32 *sums = (i32*) calloc(rows, sizeof(i32)); // start zero
-    i32 *tmp = (i32*) malloc(rows * sizeof(i32)); // values set each iteration
+    i64 *sums = (i64*) calloc(rows, sizeof(i64)); // start zero
+    i64 *tmp = (i64*) malloc(rows * sizeof(i64)); // values set each iteration
     u32 col = cols; // start at last column, move towards start
     while (col--)
     {
-        i32 ri; // for row index selection (minimum lexicographic order)
+        u32 ri; // for row index selection (minimum lexicographic order)
         // sums stores dynamic values for min paths starting from each of
         // the rows in the next columns, use those to work backwards 1 column
         // minimum row separately first (next 0, 1, row-1)
@@ -51,7 +52,7 @@ void solve_backwards_dynamic(i32 **matr, u32 rows, u32 cols)
         matr[rows - 1][col] = ri;
         // all other rows (1...row-2) (rows in the middle)
         i32 **rp = matr + 1;
-        i32 *tmpp = tmp + 1; // pointer to temp array
+        i64 *tmpp = tmp + 1; // pointer to temp array
         i32 rn = 1; // row number
         for (; rp != matr + rows - 1; ++rp, ++rn, ++tmpp)
         {
@@ -67,15 +68,15 @@ void solve_backwards_dynamic(i32 **matr, u32 rows, u32 cols)
     i32 r = 0; // find start row
     for (u32 i = 1; i != rows; ++i)
         if (sums[i] < sums[r]) r = i;
-    printf("%i", r);
-    i32 minpathval = sums[r]; // save min path value to print after path
+    printf("%i", r + 1);
+    i64 minpathval = sums[r]; // save min path value to print after path
     // follow path to print remaining values
     for (col = 0; col != cols - 1; ++col) // ignore last column
     {
         r = matr[r][col];
-        printf(" %i", r);
+        printf(" %i", r + 1);
     }
-    printf("\n%i\n", minpathval);
+    printf("\n%li\n", minpathval);
     free(sums);
     free(tmp);
 }
