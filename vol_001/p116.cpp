@@ -53,7 +53,7 @@ void solve_backwards_dynamic(i32 **matr, u32 rows, u32 cols)
         i32 **rp = matr + 1;
         i32 *tmpp = tmp + 1; // pointer to temp array
         i32 rn = 1; // row number
-        for (; rp != matr + rows - 1; ++rp, ++rn, ++tmp)
+        for (; rp != matr + rows - 1; ++rp, ++rn, ++tmpp)
         {
             ri = rn - 1; // initial row index selection
             if (sums[rn] < sums[ri]) ri = rn;
