@@ -11,7 +11,21 @@ typedef int32_t i32;
 
 void solve_backwards_dynamic(i32 **matr, u32 rows, u32 cols)
 {
-    ;
+    assert(rows and cols); // nonzero
+    if (rows == 1) // special case, only 1 possible path
+    {
+        // print path and sum numbers
+        i32 sum = 0;
+        printf("%u", 1); // first 1 (first column in path)
+        for (i32 *cp = *matr + 1; cp != *matr + cols; ++cp)
+        {
+            sum += *cp;
+            printf(" %u", 1);
+        }
+        printf("\n%i\n", sum);
+        return;
+    }
+    // at least 2 rows
 }
 
 int main(int argc, char **argv)
