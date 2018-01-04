@@ -17,7 +17,7 @@ int main(int argc, char **argv)
         std::getline(std::cin, line); // does not include '\n'
         if (line.length() == 1 and line.front() == '#') break; // end input
         u32 value = 0;
-        for (std::string::iterator i = line.begin(); i != line.end(); ++i)
+        for (auto i = line.begin(); i != line.end(); ++i)
         {
             value <<= 8;
             value += (u32) (*i);
