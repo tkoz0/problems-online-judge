@@ -13,7 +13,7 @@
 bool palin(char *w, size_t l)
 {
     char *e = &(w[l - 1]); // pointer to last char
-    while (w < e)
+    while (w < e) // no need to check middle char
     {
         if (*w != *e) return false;
         ++w, --e; // move iterators inward
@@ -24,7 +24,7 @@ bool palin(char *w, size_t l)
 bool mirror(char *w, size_t l)
 {
     char *e = &(w[l - 1]);
-    while (w < e)
+    while (w <= e) // middle char must be checked for mirror (<= rather than <)
     {
         switch (*e)
         {
@@ -67,6 +67,7 @@ bool mirror(char *w, size_t l)
         case '3': if (*w != 'E') return false; break;
         case '5': if (*w != 'Z') return false; break;
         default: assert(0); // chars should never be invalid
+        // '0' is never valid, considered the same as 'O'
 /*
         case 'A': if (*w != 'A') return false; break;
         case 'B':
