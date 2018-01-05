@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #define MAX_STR_LEN 20
 #define NOT_PALIN " -- is not a palindrome."
@@ -11,7 +12,7 @@
 
 bool palin(char *w, size_t l)
 {
-    char *e = w[l - 1]; // pointer to last char
+    char *e = &(w[l - 1]); // pointer to last char
     while (w < e)
     {
         if (*w != *e) return false;
@@ -22,7 +23,7 @@ bool palin(char *w, size_t l)
 
 bool mirror(char *w, size_t l)
 {
-    char *e = w[l - 1];
+    char *e = &(w[l - 1]);
     while (w < e)
     {
         switch (*e)
@@ -66,7 +67,7 @@ bool mirror(char *w, size_t l)
         case '3': if (*w != 'E') return false; break;
         case '5': if (*w != 'Z') return false; break;
         default: assert(0); // chars should never be invalid
-/* -------------------------------------------------------------------------- */
+/*
         case 'A': if (*w != 'A') return false; break;
         case 'B':
         case 'C':
@@ -103,6 +104,7 @@ bool mirror(char *w, size_t l)
         case '8': if (*w != '8') return false; break;
         case '9': return false;
         default: assert(0); // should never have invalid character
+*/
         }
         ++w, --e;
     }
@@ -111,25 +113,25 @@ bool mirror(char *w, size_t l)
 
 int main(int argc, char **argv)
 {
-    char *line;
-    size_t len;
-    while (getline(line, &len, stdin) != -1)
+    char *line = NULL;
+    size_t arrlen;
+    while (getline(&line, &arrlen, stdin) != -1)
     {
         assert(line);
-        len = strlen(line); // length
+        size_t len = strlen(line); // length
         line[--len] = '\0'; // exclude '\n' at end of line
         // determine what type of string it is
         if (palin(line, len))
         {
-            if (mirror(line, len)) printf("%s\n\n", MIR_PALIN);
-            else printf("%s\n\n", REG_PALIN);
+            if (mirror(line, len)) printf("%s%s\n\n", line, MIR_PALIN);
+            else printf("%s%s\n\n", line, REG_PALIN);
         }
         else
         {
-            if (mirror(line, len)) printf("%s\n\n", MIR_STR);
-            else printf("%s\n\n", NOT_PALIN);
+            if (mirror(line, len)) printf("%s%s\n\n", line, MIR_STR);
+            else printf("%s%s\n\n", line, NOT_PALIN);
         }
-        free(line);
     }
+    if (line) free(line);
     return 0;
 }
