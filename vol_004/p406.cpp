@@ -37,7 +37,11 @@ int main(int argc, char **argv)
     while (scanf("%u %u\n", &N, &C) == 2)
     {
         assert(N and N <= MAX_N); // 1 <= N <= 1000
-        assert(C and C <= N); // 1 <= C <= N
+//        assert(C and C <= N); // 1 <= C <= N
+        assert(C);
+        // C <= N assertion caused runtime error even though problem spec says
+        // one condition is 1 <= C <= N
+//        assert(C <= N);
         // find middle prime(s)
         bool *beg = &(sieve[1]), *end = &(sieve[N]);
         while (*end) --end; // find prime
