@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include <vector>
+#include <string>
 
 typedef uint32_t u32;
 #define COORD_LIMIT 500
@@ -36,6 +37,35 @@ struct kingdom
         this->_homes.push_back(pt(x, y));
     }
 };
+
+void _debug_visualize(std::vector<kingdom>& k, std::vector<pt>& m,
+    bool show_missiles = true)
+{
+    // output a visualization grid of the map
+    // assume that no kingdoms overlap so visualization shouldnt get messy
+    // represent homes of kingdoms with nums 1-9
+    // power plants are P and missiles are X
+    assert(k.size() <= 9);
+    u32 xlim = 0, ylim = 0;
+    for (auto ki = k.begin(); ki != k.end(); ++ki)
+    {
+        if (ki->_pp.x > xlim) xlim = ki->_pp.x;
+        if (ki->_pp.y > ylim) ylim = ki->_pp.y;
+        for (auto hi = ki->_homes.begin(); hi != ki->_homes.end(); ++hi)
+        {
+            if (hi->x > xlim) xlim = hi->x;
+            if (hi->y > ylim) ylim = hi->y;
+        }
+    }
+    for (auto mi = m.begin(); mi != m.end(); ++mi)
+    {
+        if (mi->x > xlim) xlim = mi->x;
+        if (mi->y > ylim) ylim = mi->i;
+    }
+    // create empty grid with spaces
+    std::vector<std::string> grid(ylim+1, std::string(xlim+1, ' '));
+    ;
+}
 
 void _debug_print(std::vector<kingdom>& k, std::vector<pt>& m)
 {
