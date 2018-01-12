@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 
 typedef uint32_t u32;
 #define COORD_LIMIT 500
@@ -60,11 +61,23 @@ void _debug_visualize(std::vector<kingdom>& k, std::vector<pt>& m,
     for (auto mi = m.begin(); mi != m.end(); ++mi)
     {
         if (mi->x > xlim) xlim = mi->x;
-        if (mi->y > ylim) ylim = mi->i;
+        if (mi->y > ylim) ylim = mi->y;
     }
     // create empty grid with spaces
     std::vector<std::string> grid(ylim+1, std::string(xlim+1, ' '));
-    ;
+    u32 index = 1;
+    for (auto ki = k.begin(); ki != k.end(); ++ki, ++index)
+    {
+        // add homes and power plants to grid
+        grid[ki->_pp.y][ki->_pp.x] = 'P';
+        for (auto hi = ki->_homes.begin(); hi != ki->_homes.end(); ++hi)
+            grid[hi->y][hi->x] = '0' + index;
+    }
+    for (auto mi = m.begin(); mi != m.end(); ++mi)
+        grid[mi->y][mi->x] = 'X'; // place missiles
+    // output
+    for (auto li = grid.begin(); li != grid.end(); ++li)
+        std::cout << *li << std::endl;
 }
 
 void _debug_print(std::vector<kingdom>& k, std::vector<pt>& m)
@@ -114,7 +127,8 @@ int main(int argc, char **argv)
     u32 x, y;
     while (scanf("%u %u\n", &x, &y) == 2)
         missiles.push_back(pt(x, y));
-//    _debug_print(kingdoms, missiles);
+    _debug_print(kingdoms, missiles);
+    _debug_visualize(kingdoms, missiles);
     return 0;
 }
 
