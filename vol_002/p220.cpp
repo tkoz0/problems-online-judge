@@ -23,16 +23,43 @@ void write_grid(char **grid)
     }
 }
 
+void count_pieces(char **grid, uint32_t *black, uint32_t *white)
+{
+    uint32_t b = 0, w = 0;
+    for (char **rp = grid; rp != grid + GRID_SIZE; ++rp)
+        for (char *cp = *rp; cp != *rp + GRID_SIZE; ++cp)
+        {
+            if (*cp == 'B') ++b;
+            else if (*cp == 'W') ++w;
+        }
+    *black = b;
+    *white = w;
+}
+
 inline bool follow_path(char **grid, char turn, uint32_t r, uint32_t c,
     uint32_t dr, uint32_t dc)
 {
     // search for same color along path
+    // skip immediate next since at least 1 need sto be bracketed
+    r += dr, c += dc;
     while (r += dr, c += dc, r < GRID_SIZE and c < GRID_SIZE)
     {
         if (grid[r][c] == '-') return false;
         if (grid[r][c] == turn) return true;
     }
     return false; // did not find color
+}
+
+inline void fill_path(char **grid, char turn, uint32_t r, uint32_t c,
+    uint32_t dr, uint32_t dc)
+{
+    if (follow_path(grid, turn, r, c, dr, dc))
+        while (r += dr, c += dc, r < GRID_SIZE and c < GRID_SIZE)
+        {
+            if (grid[r][c] != turn)
+                grid[r][c] = turn;
+            else break; // reached same color
+        }
 }
 
 inline bool is_legal(char **grid, char turn, uint32_t r, uint32_t c)
@@ -86,7 +113,31 @@ void list_possible(char **grid, char turn)
 
 void make_move(char **grid, char *turn, uint32_t r, uint32_t c)
 {
-    ;
+    char player;
+    if (is_legal(grid, *turn, r, c))
+    {
+        player = *turn;
+        *turn = other(*turn);
+    }
+    else
+    {
+        assert(is_legal(grid, other(*turn), r, c));
+        player = other(*turn);
+        // no need to switch player if other one moves
+    }
+    // TODO perform move operation
+    fill_path(grid, player, r, c, 0, 1);
+    fill_path(grid, player, r, c, 0, -1);
+    fill_path(grid, player, r, c, 1, 0);
+    fill_path(grid, player, r, c, -1, 0);
+    fill_path(grid, player, r, c, 1, 1);
+    fill_path(grid, player, r, c, -1, -1);
+    fill_path(grid, player, r, c, 1, -1);
+    fill_path(grid, player, r, c, -1, 1);
+    grid[r][c] = player;
+    uint32_t black, white;
+    count_pieces(grid, &black, &white);
+    printf("Black - %2u White - %2u\n", black, white);
 }
 
 char next_ch()
@@ -117,7 +168,6 @@ int main(int argc, char **argv)
                 *cp = next_ch();
                 assert(*cp == 'B' or *cp == 'W' or *cp == '-');
             }
-        write_grid(grid);
         char turn = next_ch();
         assert(turn == 'B' or turn == 'W');
         // process instructions until quit (Q)
@@ -131,13 +181,15 @@ int main(int argc, char **argv)
             {
                 char _r = next_ch();
                 char _c = next_ch();
-                assert('0' <= _r and _r < '0' + GRID_SIZE);
-                assert('0' <= _c and _c < '0' + GRID_SIZE);
-                make_move(grid, &turn, _r - '0', _c - '0');
+                assert('1' <= _r and _r <= '0' + GRID_SIZE);
+                assert('1' <= _c and _c <= '0' + GRID_SIZE);
+                make_move(grid, &turn, _r - '1', _c - '1');
             }
             else
             {
                 assert(instr == 'Q');
+                write_grid(grid);
+                printf("\n");
                 break;
             }
         }
