@@ -138,6 +138,7 @@ void make_move(char **grid, char *turn, uint32_t r, uint32_t c)
     uint32_t black, white;
     count_pieces(grid, &black, &white);
     printf("Black - %2u White - %2u\n", black, white);
+write_grid(grid);
 }
 
 char next_ch()
