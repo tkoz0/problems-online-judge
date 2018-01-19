@@ -42,6 +42,8 @@ inline bool follow_path(char **grid, char turn, uint32_t r, uint32_t c,
     // search for same color along path
     // skip immediate next since at least 1 need sto be bracketed
     r += dr, c += dc;
+    if (r < GRID_SIZE and c < GRID_SIZE
+        and grid[r][c] == '-') return false; // next space empty
     while (r += dr, c += dc, r < GRID_SIZE and c < GRID_SIZE)
     {
         if (grid[r][c] == '-') return false;
@@ -123,6 +125,7 @@ void make_move(char **grid, char *turn, uint32_t r, uint32_t c)
         player = other(*turn);
         // no need to switch player if other one moves
     else return; // neither move valid
+    assert(is_legal(grid, player, r, c));
     fill_path(grid, player, r, c, 0, 1);
     fill_path(grid, player, r, c, 0, -1);
     fill_path(grid, player, r, c, 1, 0);
@@ -187,7 +190,7 @@ int main(int argc, char **argv)
             {
                 assert(instr == 'Q');
                 write_grid(grid);
-                printf("\n");
+                if (N) printf("\n"); // each time except last
                 break;
             }
         }
