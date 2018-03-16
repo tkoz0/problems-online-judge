@@ -1,2 +1,0 @@
-# uva-online-judge
-
