@@ -38,4 +38,3 @@ int main(int argc, char **argv)
     free(pts);
     return 0;
 }
-

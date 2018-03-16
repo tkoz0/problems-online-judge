@@ -131,4 +131,3 @@ int main(int argc, char **argv)
     _debug_visualize(kingdoms, missiles);
     return 0;
 }
-
