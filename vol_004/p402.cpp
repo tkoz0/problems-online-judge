@@ -58,4 +58,5 @@ int main(int argc, char **argv)
             printf(" %u", *itr);
         printf("\n\n");
     }
+    return 0;
 }
