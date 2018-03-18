@@ -33,6 +33,28 @@ struct pos
     // G = ground speed
 };
 
+// compares 2 digit strings, orders ascending, if identical numbers then it
+// orders by string length
+struct custom_strcmp
+{
+    bool operator()(const std::string& a, const std::string& b)
+    {
+        u32 ia = 0, ib = 0;
+        for (char c : a)
+        {
+            assert('0' <= c and c <= '9');
+            ia *= 10, ia += c - '0';
+        }
+        for (char c : b)
+        {
+            assert('0' <= c and c <= '9');
+            ib *= 10, ib += c - '0';
+        }
+        if (ia != ib) return ia < ib;
+        return a.length() < b.length();
+    }
+};
+
 // converts to x,y and uses distance formula
 float polar_distance(float r1, float a1, float r2, float a2)
 {
@@ -44,9 +66,12 @@ float polar_distance(float r1, float a1, float r2, float a2)
     return sqrt(dx*dx + dy*dy);
 }
 
-void print_warnings(const std::map<std::string, pos>& s1,
-                    const std::map<std::string, pos>& s2)
+void print_warnings(const std::map<std::string, pos, custom_strcmp>& s1,
+                    const std::map<std::string, pos, custom_strcmp>& s2)
 {
+    custom_strcmp sc; // string comparison functor
+//    for (auto a : s1) printf("--s1 %s\n",a.first.c_str());
+//    for (auto a : s2) printf("--s2 %s\n",a.first.c_str());
     auto itr1 = s1.begin(), itr2 = s2.begin();
     while (itr1 != s1.end()) // loop until s1 finishes
     {
@@ -74,8 +99,9 @@ void print_warnings(const std::map<std::string, pos>& s1,
                 printf("%5s%s\n", itr1->first.c_str(), EW);
             ++itr1, ++itr2;
         }
-        else if (itr1->first < itr2->first) // search s1
-            for (; itr1 != s1.end() and itr1->first < itr2->first; ++itr1)
+        else if (sc(itr1->first, itr2->first)) // search s1
+            for (; itr1 != s1.end()
+                    and sc(itr1->first, itr2->first); ++itr1)
             {
                 float maxdist = (itr1->second.G * (1.0F + TOLERANCE))
                         * (SWEEP_TIME/3600.0F);
@@ -85,8 +111,9 @@ void print_warnings(const std::map<std::string, pos>& s1,
             }
         else // search s2
         {
-            assert(itr2->first < itr1->first);
-            for (; itr2 != s2.end() and itr2->first < itr1->first; ++itr2)
+            assert(sc(itr2->first, itr1->first));
+            for (; itr2 != s2.end()
+                    and sc(itr2->first, itr1->first); ++itr2)
             {
                 float maxdist = (itr2->second.G * (1.0F + TOLERANCE))
                         * (SWEEP_TIME/3600.0F);
@@ -110,7 +137,7 @@ int main(int argc, char **argv)
 {
     u32 N1, N2, scenario = 0;
     int r;
-    std::map<std::string, pos> s1, s2;
+    std::map<std::string, pos, custom_strcmp> s1, s2;
     std::string S;
     pos p;
     while (++scenario, scanf("%u", &N1) == 1)
