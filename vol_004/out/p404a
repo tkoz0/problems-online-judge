@@ -1,0 +1,18 @@
+Scenario # 1
+  001 -- equipment warning
+   02 -- equipment warning
+  103 -- equipment warning
+  105 -- equipment warning
+  106 -- equipment warning
+  107 -- equipment warning
+
+Scenario # 2
+  001 -- domain exited
+  002 -- domain exited
+  003 -- domain loss
+  004 -- domain exited
+  101 -- new intrusion
+  102 -- new intrusion
+  103 -- new aloft
+  104 -- new intrusion
+

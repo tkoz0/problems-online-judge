@@ -81,7 +81,7 @@ void print_warnings(const std::map<std::string, pos, custom_strcmp>& s1,
             {
                 float maxdist = (itr1->second.G * (1.0F + TOLERANCE))
                         * (SWEEP_TIME/3600.0F);
-                if (DLIM - itr1->second.D < maxdist)
+                if (DLIM - itr1->second.D <= maxdist)
                     printf("%5s%s\n", itr1->first.c_str(), DE);
                 else printf("%5s%s\n", itr1->first.c_str(), DL);
             }
@@ -105,7 +105,7 @@ void print_warnings(const std::map<std::string, pos, custom_strcmp>& s1,
             {
                 float maxdist = (itr1->second.G * (1.0F + TOLERANCE))
                         * (SWEEP_TIME/3600.0F);
-                if (DLIM - itr1->second.D < maxdist)
+                if (DLIM - itr1->second.D <= maxdist)
                     printf("%5s%s\n", itr1->first.c_str(), DE);
                 else printf("%5s%s\n", itr1->first.c_str(), DL);
             }
@@ -117,7 +117,7 @@ void print_warnings(const std::map<std::string, pos, custom_strcmp>& s1,
             {
                 float maxdist = (itr2->second.G * (1.0F + TOLERANCE))
                         * (SWEEP_TIME/3600.0F);
-                if (DLIM - itr2->second.D < maxdist)
+                if (DLIM - itr2->second.D <= maxdist)
                     printf("%5s%s\n", itr2->first.c_str(), NI);
                 else printf("%5s%s\n", itr2->first.c_str(), NA);
             }
@@ -127,7 +127,7 @@ void print_warnings(const std::map<std::string, pos, custom_strcmp>& s1,
     {
         float maxdist = (itr2->second.G * (1.0F + TOLERANCE))
                 * (SWEEP_TIME/3600.0F);
-        if (DLIM - itr2->second.D < maxdist)
+        if (DLIM - itr2->second.D <= maxdist)
             printf("%5s%s\n", itr2->first.c_str(), NI);
         else printf("%5s%s\n", itr2->first.c_str(), NA);
     }
