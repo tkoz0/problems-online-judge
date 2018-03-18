@@ -404,7 +404,7 @@ void c5c(char **page, u32 R, char *text)
             ++pagep, ++c5texti;
         }
         C = Cmid, c5texti = textl >> 1, pagep = &(page[row][Cmid]);
-        while (C-- and c5texti--)
+        while (C-- and c5texti--) // print left half
         {
             assert(_debug_valid_char(text[c5texti / C5_W]));
             --pagep;
@@ -422,11 +422,90 @@ int main(int argc, char **argv)
     // alloc memory for page
     char **page = (char**) malloc(PAGE_H * sizeof(char*));
     for (char **r = page; r != page + PAGE_H; ++r)
-        *r = (char*) malloc((PAGE_W+1) * sizeof(char)); // +1 for null termination
+        *r = (char*) malloc((PAGE_W+1) * sizeof(char)); // +1 for null terminate
     flush_page(page);
     std::string cmd, font;
     while (std::cin >> cmd)
     {
+        u32 R, C, texti = 0;
+        int r;
+        char text[MAXSTRLEN+1], c;
+        bool c1 = false;
+        if (cmd == ".EOP")
+        {
+            for (char **r = page; r != page + PAGE_H; ++r)
+                printf("%s\n", *r);
+            printf("\n%s\n\n", ENDL);
+            flush_page(page);
+        }
+        else
+        {
+            font = "";
+            std::cin >> font;
+            if (font == "C1") c1 = true;
+            else assert(font == "C5");
+            if (cmd == ".P")
+            {
+                r = scanf("%u %u", &R, &C);
+                assert(r == 2);
+            }
+            else if (cmd == ".L")
+            {
+                r = scanf("%u", &R);
+                assert(r == 1);
+            }
+            else if (cmd == ".R")
+            {
+                r = scanf("%u", &R);
+                assert(r == 1);
+            }
+            else if (cmd == ".C")
+            {
+                r = scanf("%u", &R);
+                assert(r == 1);
+            }
+            else assert(0); // invalid command
+            for (;;) // skip the |
+            {
+                r = scanf("%c", &c);
+                assert(r == 1);
+                if (c == '|') break;
+            }
+            for (;;)
+            {
+                r = scanf("%c", &c);
+                assert(r == 1);
+                if (c == '|') break;
+                text[texti++] = c;
+                assert(texti <= MAXSTRLEN);
+            }
+            text[texti] = '\0';
+            // determine which print function to use based on command
+            continue;
+            if (cmd == ".P") // place (row, column)
+            {
+                if (c1) c1p(page, R, C, text);
+                else c5p(page, R, C, text);
+            }
+            else if (cmd == ".L") // left justify (row)
+            {
+                if (c1) c1l(page, R, text);
+                else c5l(page, R, text);
+            }
+            else if (cmd == ".R") // right justify (row)
+            {
+                if (c1) c1r(page, R, text);
+                else c5r(page, R, text);
+            }
+            else if (cmd == ".C") // center (row), to right if odd string length
+            {
+                if (c1) c1c(page, R, text);
+                else c5c(page, R, text);
+            }
+            else assert(0); // invalid command
+        }
+        /*
+        continue;
         if (cmd == ".EOP") // print contents and clear page
         {
             for (char **r = page; r != page + PAGE_H; ++r)
@@ -475,6 +554,7 @@ int main(int argc, char **argv)
         --R, --C; // convert from provided 1..N to 0..N-1 numbering
         assert(R < PAGE_H);
         assert(C < PAGE_W);
+        continue;
         if (cmd == ".P") // place (row, column)
         {
             if (c1) c1p(page, R, C, text);
@@ -496,6 +576,7 @@ int main(int argc, char **argv)
             else c5c(page, R, text);
         }
         else assert(0); // invalid command
+        */
     }
     // clear memory
     for (char **r = page; r != page + PAGE_H; ++r)
