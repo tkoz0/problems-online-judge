@@ -14,6 +14,8 @@
 #define PAGE_H 60
 #define C5_W 6
 #define C5_H 5
+#define BMPFILL '*'
+#define BMPEMPTY '.'
 #define MAXSTRLEN 60
 typedef uint32_t u32;
 // C1 = small font, C5 = big font
@@ -275,15 +277,7 @@ void c1p(char **page, u32 R, u32 C, char *text)
 // small text at R,0
 void c1l(char **page, u32 R, char *text)
 {
-    char *chr = &(page[R][0]);
-    u32 C = 0;
-    while (C++ < PAGE_W and *text) // in range and nonnull char
-    {
-        assert(_debug_valid_char(*text));
-        if (*text != ' ')
-            *chr = *text;
-        ++text, ++chr;
-    }
+    c1p(page, R, 0, text);
 }
 
 // small text, right end at R,(width-1)
@@ -332,10 +326,95 @@ void c1c(char **page, u32 R, char *text)
     }
 }
 
-void c5p(char **page, u32 R, u32 C, char *text){}
-void c5l(char **page, u32 R, char *text){}
-void c5r(char **page, u32 R, char *text){}
-void c5c(char **page, u32 R, char *text){}
+// place big text at R,C (top left corner)
+void c5p(char **page, u32 R, u32 C, char *text)
+{
+    u32 c5i = 0; // row index of the big text
+    // main loop, skip rows that are cut off
+    for (u32 row = R; row < PAGE_H and row < R + C5_H; ++row, ++c5i)
+    {
+        char *textp = text;
+        char *pagep = &(page[row][C]);
+        u32 col = C; // keep track of column to avoid going past page edge
+        while (col < PAGE_W and *textp) // char loop: col in range, nonnull char
+        {
+            assert(_debug_valid_char(*textp));
+            const char *bmp = c5bitmap[*textp][c5i]; // get bmp data ptr
+            while (col < PAGE_W and *bmp) // bitmap loop
+            {
+                ++col; // increment after in came reaching null char in bmp line
+                if (*bmp == BMPFILL)
+                    *pagep = BMPFILL;
+                else assert(*bmp == BMPEMPTY);
+                ++pagep, ++bmp;
+            }
+            ++textp;
+        }
+    }
+}
+
+// place big text at R,1 (or R,0)
+void c5l(char **page, u32 R, char *text)
+{
+    c5p(page, R, 0, text);
+}
+
+// similar to left justify but place the big test starting from right
+void c5r(char **page, u32 R, char *text)
+{
+    u32 c5i = 0;
+    for (u32 row = R; row < PAGE_H and row < R + C5_H; ++row, ++c5i)
+    {
+        char *textp = text;
+        while (*textp) ++textp; // start at end of text
+        char *pagep = &(page[row][PAGE_W]);
+        u32 C = PAGE_W;
+        while (C and textp-- != text)
+        {
+            assert(_debug_valid_char(*textp));
+            const char *bmp = c5bitmap[*textp][c5i];
+            while (*bmp) ++bmp; // find end
+            while (C-- and bmp-- != c5bitmap[*textp][c5i])
+            {
+                --pagep;
+                if (*bmp == BMPFILL)
+                    *pagep = BMPFILL;
+                else assert(*bmp == BMPEMPTY);
+            }
+        }
+    }
+}
+
+// center big text
+void c5c(char **page, u32 R, char *text)
+{
+    size_t textl = C5_W * strlen(text);
+    u32 c5i = 0, Cmid = PAGE_W >> 1;
+    for (u32 row = R; row < PAGE_H and row < R + C5_H; ++row, ++c5i)
+    {
+        char *pagep = &(page[row][Cmid]);
+        u32 C = Cmid, c5texti = textl >> 1;
+        while (C++ < PAGE_W and c5texti < textl) // print right half
+        {
+            assert(_debug_valid_char(text[c5texti / C5_W]));
+            if (c5bitmap[text[c5texti / C5_W]][c5i][c5texti % C5_W] == BMPFILL)
+                *pagep = BMPFILL;
+            else assert(c5bitmap[text[c5texti / C5_W]][c5i][c5texti % C5_W]
+                    == BMPEMPTY);
+            ++pagep, ++c5texti;
+        }
+        C = Cmid, c5texti = textl >> 1, pagep = &(page[row][Cmid]);
+        while (C-- and c5texti--)
+        {
+            assert(_debug_valid_char(text[c5texti / C5_W]));
+            --pagep;
+            if (c5bitmap[text[c5texti / C5_W]][c5i][c5texti % C5_W] == BMPFILL)
+                *pagep = BMPFILL;
+            else assert(c5bitmap[text[c5texti / C5_W]][c5i][c5texti % C5_W]
+                    == BMPEMPTY);
+        }
+    }
+}
 
 int main(int argc, char **argv)
 {
