@@ -4,7 +4,9 @@
 #include <assert.h>
 #include <math.h>
 
+#include <iostream>
 #include <map>
+#include <string>
 
 #define DLIM 10.0F
 #define GLIM 1000.0F
@@ -42,7 +44,8 @@ float polar_distance(float r1, float a1, float r2, float a2)
     return sqrt(dx*dx + dy*dy);
 }
 
-void print_warnings(const std::map<u32, pos>& s1, const std::map<u32, pos>& s2)
+void print_warnings(const std::map<std::string, pos>& s1,
+                    const std::map<std::string, pos>& s2)
 {
     auto itr1 = s1.begin(), itr2 = s2.begin();
     while (itr1 != s1.end()) // loop until s1 finishes
@@ -54,8 +57,8 @@ void print_warnings(const std::map<u32, pos>& s1, const std::map<u32, pos>& s2)
                 float maxdist = (itr1->second.G * (1.0F + TOLERANCE))
                         * (SWEEP_TIME/3600.0F);
                 if (DLIM - itr1->second.D < maxdist)
-                    printf("%5u%s\n", itr1->first, DE);
-                else printf("%5u%s\n", itr1->first, DL);
+                    printf("%5s%s\n", itr1->first.c_str(), DE);
+                else printf("%5s%s\n", itr1->first.c_str(), DL);
             }
             break;
         }
@@ -68,7 +71,7 @@ void print_warnings(const std::map<u32, pos>& s1, const std::map<u32, pos>& s2)
                     itr2->second.D, itr2->second.A) * (3600.0F/SWEEP_TIME);
 //            printf("avg = %f, calc = %f\n",avgspeed,calcspeed);
             if (fabs(avgspeed - calcspeed) > TOLERANCE * calcspeed)
-                printf("%5u%s\n", itr1->first, EW);
+                printf("%5s%s\n", itr1->first.c_str(), EW);
             ++itr1, ++itr2;
         }
         else if (itr1->first < itr2->first) // search s1
@@ -77,8 +80,8 @@ void print_warnings(const std::map<u32, pos>& s1, const std::map<u32, pos>& s2)
                 float maxdist = (itr1->second.G * (1.0F + TOLERANCE))
                         * (SWEEP_TIME/3600.0F);
                 if (DLIM - itr1->second.D < maxdist)
-                    printf("%5u%s\n", itr1->first, DE);
-                else printf("%5u%s\n", itr1->first, DL);
+                    printf("%5s%s\n", itr1->first.c_str(), DE);
+                else printf("%5s%s\n", itr1->first.c_str(), DL);
             }
         else // search s2
         {
@@ -88,8 +91,8 @@ void print_warnings(const std::map<u32, pos>& s1, const std::map<u32, pos>& s2)
                 float maxdist = (itr2->second.G * (1.0F + TOLERANCE))
                         * (SWEEP_TIME/3600.0F);
                 if (DLIM - itr2->second.D < maxdist)
-                    printf("%5u%s\n", itr2->first, NI);
-                else printf("%5u%s\n", itr2->first, NA);
+                    printf("%5s%s\n", itr2->first.c_str(), NI);
+                else printf("%5s%s\n", itr2->first.c_str(), NA);
             }
         }
     }
@@ -98,16 +101,17 @@ void print_warnings(const std::map<u32, pos>& s1, const std::map<u32, pos>& s2)
         float maxdist = (itr2->second.G * (1.0F + TOLERANCE))
                 * (SWEEP_TIME/3600.0F);
         if (DLIM - itr2->second.D < maxdist)
-            printf("%5u%s\n", itr2->first, NI);
-        else printf("%5u%s\n", itr2->first, NA);
+            printf("%5s%s\n", itr2->first.c_str(), NI);
+        else printf("%5s%s\n", itr2->first.c_str(), NA);
     }
 }
 
 int main(int argc, char **argv)
 {
-    u32 N1, N2, scenario = 0, S;
+    u32 N1, N2, scenario = 0;
     int r;
-    std::map<u32, pos> s1, s2;
+    std::map<std::string, pos> s1, s2;
+    std::string S;
     pos p;
     while (++scenario, scanf("%u", &N1) == 1)
     {
@@ -116,9 +120,11 @@ int main(int argc, char **argv)
         s2.clear();
         while (N1--) // radar sweep 1
         {
-            r = scanf("%u %f %f %f", &S, &p.A, &p.D, &p.G);
-            assert(r == 4);
-            assert(SMIN <= S and S < SMAX);
+            std::cin >> S;
+            r = scanf("%f %f %f", &p.A, &p.D, &p.G);
+            assert(r == 3);
+//            assert(SMIN <= S and S < SMAX);
+            assert(S.length() <= 5);
             assert(0.0 <= p.A and p.A < 360.0F);
             assert(0.0 <= p.D and p.D <= DLIM);
             assert(0.0 <= p.G and p.G < GLIM);
@@ -129,9 +135,11 @@ int main(int argc, char **argv)
         assert(N2 <= NMAX);
         while (N2--) // radar sweep 2
         {
-            r = scanf("%u %f %f %f", &S, &p.A, &p.D, &p.G);
-            assert(r == 4);
-            assert(SMIN <= S and S < SMAX);
+            std::cin >> S;
+            r = scanf("%f %f %f", &p.A, &p.D, &p.G);
+            assert(r == 3);
+//            assert(SMIN <= S and S < SMAX);
+            assert(S.length() <= 5);
             assert(0.0 <= p.A and p.A < 360.0F);
             assert(0.0 <= p.D and p.D <= DLIM);
             assert(0.0 <= p.G and p.G < GLIM);
