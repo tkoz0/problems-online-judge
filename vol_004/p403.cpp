@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <iostream>
 #include <map>
@@ -256,11 +257,81 @@ void flush_page(char **page) // fill with .
 }
 
 // functions to process print commands, named as <font><cmd>
+// assume R,C are given in terms of counting starting from 0
 
-void c1p(char **page, u32 R, u32 C, char *text){}
-void c1l(char **page, u32 R, char *text){}
-void c1r(char **page, u32 R, char *text){}
-void c1c(char **page, u32 R, char *text){}
+// place small text at R,C
+void c1p(char **page, u32 R, u32 C, char *text)
+{
+    char *chr = &(page[R][C]); // starting position
+    while (C++ < PAGE_W and *text) // place chars while in range and nonnull
+    {
+        assert(_debug_valid_char(*text));
+        if (*text != ' ') // blanks dont overwrite
+            *chr = *text;
+        ++text, ++chr;
+    }
+}
+
+// small text at R,0
+void c1l(char **page, u32 R, char *text)
+{
+    char *chr = &(page[R][0]);
+    u32 C = 0;
+    while (C++ < PAGE_W and *text) // in range and nonnull char
+    {
+        assert(_debug_valid_char(*text));
+        if (*text != ' ')
+            *chr = *text;
+        ++text, ++chr;
+    }
+}
+
+// small text, right end at R,(width-1)
+void c1r(char **page, u32 R, char *text)
+{
+    char *chr = &(page[R][PAGE_W]); // start 1 past last on page row
+    u32 C = PAGE_W;
+    char *textp = text;
+    while (*textp) // move to end of string
+    {
+        assert(_debug_valid_char(*textp));
+        ++textp;
+    }
+    while (C-- and textp-- != text) // in range, not past beginning of text
+    {
+        --chr;
+        if (*textp != ' ')
+            *chr = *textp;
+    }
+}
+
+// center aligns text on row R, for the odd-even lengths mismatch case:
+// dealing with off-by-1 is configured for the provided specification
+void c1c(char **page, u32 R, char *text)
+{
+    size_t textl = strlen(text);
+    u32 Cmid = PAGE_W >> 1;
+    char *textmidp = &(text[textl >> 1]); // midpoints calculated with indexes
+    char *pagemidp = &(page[R][Cmid]);
+    u32 C = Cmid;
+    char *textp = textmidp, *pagep = pagemidp;
+    while (C++ < PAGE_W and *textp) // write text past midpoint (and including)
+    {
+        assert(_debug_valid_char(*textp));
+        if (*textp != ' ')
+            *pagep = *textp;
+        ++pagep, ++textp;
+    }
+    C = Cmid, textp = textmidp, pagep = pagemidp;
+    while (C-- and textp-- != text) // write text before midpoint
+    {
+        assert(_debug_valid_char(*textp));
+        --pagep;
+        if (*textp != ' ')
+            *pagep = *textp;
+    }
+}
+
 void c5p(char **page, u32 R, u32 C, char *text){}
 void c5l(char **page, u32 R, char *text){}
 void c5r(char **page, u32 R, char *text){}
@@ -291,7 +362,7 @@ int main(int argc, char **argv)
         if (font == "C1") c1 = true;
         else assert(font == "C5");
         u32 R, C;
-        int r;
+        int r; // return value of scanf for assertions
         if (cmd == ".P") // read R or (R and C) depending on command
         {
             r = scanf("%u %u", &R, &C);
@@ -300,6 +371,7 @@ int main(int argc, char **argv)
         else
         {
             r = scanf("%u", &R);
+            C = 1; // dummy value to prevent assertion failure later
             assert(r == 1);
         }
         // next read string data and null terminate it
@@ -321,6 +393,9 @@ int main(int argc, char **argv)
         }
         text[texti] = '\0';
         // finally process the command
+        --R, --C; // convert from provided 1..N to 0..N-1 numbering
+        assert(R < PAGE_H);
+        assert(C < PAGE_W);
         if (cmd == ".P") // place (row, column)
         {
             if (c1) c1p(page, R, C, text);
