@@ -427,7 +427,7 @@ int main(int argc, char **argv)
     std::string cmd, font;
     while (std::cin >> cmd)
     {
-        u32 R, C, texti = 0;
+        u32 R = 1, C = 1, texti = 0;
         int r;
         char text[MAXSTRLEN+1], c;
         bool c1 = false;
@@ -465,6 +465,7 @@ int main(int argc, char **argv)
                 assert(r == 1);
             }
             else assert(0); // invalid command
+            --R, --C;
             for (;;) // skip the |
             {
                 r = scanf("%c", &c);
@@ -476,12 +477,13 @@ int main(int argc, char **argv)
                 r = scanf("%c", &c);
                 assert(r == 1);
                 if (c == '|') break;
+//                assert(_debug_valid_char(c));
+                if (!_debug_valid_char(c)) continue;
                 text[texti++] = c;
                 assert(texti <= MAXSTRLEN);
             }
             text[texti] = '\0';
             // determine which print function to use based on command
-            continue;
             if (cmd == ".P") // place (row, column)
             {
                 if (c1) c1p(page, R, C, text);
