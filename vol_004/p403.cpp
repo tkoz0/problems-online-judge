@@ -13,6 +13,8 @@
 #define PAGE_H 60
 #define C5_W 6
 #define C5_H 5
+#define MAXSTRLEN 60
+typedef uint32_t u32;
 // C1 = small font, C5 = big font
 
 std::map<char, std::vector<const char*> > c5bitmap;
@@ -253,6 +255,17 @@ void flush_page(char **page) // fill with .
     }
 }
 
+// functions to process print commands, named as <font><cmd>
+
+void c1p(char **page, u32 R, u32 C, char *text){}
+void c1l(char **page, u32 R, char *text){}
+void c1r(char **page, u32 R, char *text){}
+void c1c(char **page, u32 R, char *text){}
+void c5p(char **page, u32 R, u32 C, char *text){}
+void c5l(char **page, u32 R, char *text){}
+void c5r(char **page, u32 R, char *text){}
+void c5c(char **page, u32 R, char *text){}
+
 int main(int argc, char **argv)
 {
     bitmap_init();
@@ -279,26 +292,54 @@ int main(int argc, char **argv)
         else assert(font == "C5");
         u32 R, C;
         int r;
-        if (cmd == ".P") // place (at coordinate)
+        if (cmd == ".P") // read R or (R and C) depending on command
         {
             r = scanf("%u %u", &R, &C);
             assert(r == 2);
-            continue;
         }
-        // next block, all cmds take row only
-        r = scanf("%u", &R);
-        assert(r == 1);
-        if (cmd == ".L") // left justify (row)
+        else
         {
-            ;
+            r = scanf("%u", &R);
+            assert(r == 1);
+        }
+        // next read string data and null terminate it
+        char text[MAXSTRLEN+1], c;
+        u32 texti = 0;
+        for (;;) // read up to and skip first |
+        {
+            r = scanf("%c", &c);
+            assert(r == 1);
+            if (c == '|') break; // begins string
+        }
+        for (;;)
+        {
+            r = scanf("%c", &c);
+            assert(r == 1);
+            if (c == '|') break; // terminates string
+            text[texti++] = c;
+            assert(texti <= MAXSTRLEN); // cannot exceed longest allowed string
+        }
+        text[texti] = '\0';
+        // finally process the command
+        if (cmd == ".P") // place (row, column)
+        {
+            if (c1) c1p(page, R, C, text);
+            else c5p(page, R, C, text);
+        }
+        else if (cmd == ".L") // left justify (row)
+        {
+            if (c1) c1l(page, R, text);
+            else c5l(page, R, text);
         }
         else if (cmd == ".R") // right justify (row)
         {
-            ;
+            if (c1) c1r(page, R, text);
+            else c5r(page, R, text);
         }
         else if (cmd == ".C") // center (row), to right if odd string length
         {
-            ;
+            if (c1) c1c(page, R, text);
+            else c5c(page, R, text);
         }
         else assert(0); // invalid command
     }
