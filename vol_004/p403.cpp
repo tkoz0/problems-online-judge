@@ -267,7 +267,7 @@ void c1p(char **page, u32 R, u32 C, char *text)
     char *chr = &(page[R][C]); // starting position
     while (C++ < PAGE_W and *text) // place chars while in range and nonnull
     {
-        assert(_debug_valid_char(*text));
+//        assert(_debug_valid_char(*text));
         if (*text != ' ') // blanks dont overwrite
             *chr = *text;
         ++text, ++chr;
@@ -288,7 +288,7 @@ void c1r(char **page, u32 R, char *text)
     char *textp = text;
     while (*textp) // move to end of string
     {
-        assert(_debug_valid_char(*textp));
+//        assert(_debug_valid_char(*textp));
         ++textp;
     }
     while (C-- and textp-- != text) // in range, not past beginning of text
@@ -311,7 +311,7 @@ void c1c(char **page, u32 R, char *text)
     char *textp = textmidp, *pagep = pagemidp;
     while (C++ < PAGE_W and *textp) // write text past midpoint (and including)
     {
-        assert(_debug_valid_char(*textp));
+//        assert(_debug_valid_char(*textp));
         if (*textp != ' ')
             *pagep = *textp;
         ++pagep, ++textp;
@@ -319,7 +319,7 @@ void c1c(char **page, u32 R, char *text)
     C = Cmid, textp = textmidp, pagep = pagemidp;
     while (C-- and textp-- != text) // write text before midpoint
     {
-        assert(_debug_valid_char(*textp));
+//        assert(_debug_valid_char(*textp));
         --pagep;
         if (*textp != ' ')
             *pagep = *textp;
@@ -478,7 +478,7 @@ int main(int argc, char **argv)
                 assert(r == 1);
                 if (c == '|') break;
 //                assert(_debug_valid_char(c));
-                if (!_debug_valid_char(c)) continue;
+//                if (!_debug_valid_char(c)) continue;
                 text[texti++] = c;
                 assert(texti <= MAXSTRLEN);
             }
