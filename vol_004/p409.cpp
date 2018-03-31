@@ -11,6 +11,8 @@
 #include <vector>
 
 typedef uint32_t u32;
+typedef std::vector<std::string> vecstr;
+typedef std::tuple<std::string, u32, vecstr> excuse;
 
 #define MAX_K 20
 #define MAX_E 20
@@ -18,15 +20,14 @@ typedef uint32_t u32;
 #define MAX_EX_LEN 70
 #define SEP "\".,!?"
 
-void _debug_kw_sanity_check(std::vector<std::string>& kws)
+void _debug_kw_sanity_check(vecstr& kws)
 {
     for (auto kw : kws)
         for (auto c : kw)
             assert('a' <= c and c <= 'z');
 }
 
-void _debug_ex_sanity_check(
-    std::vector<std::tuple<std::string, u32, std::vector<std::string> > >& exs)
+void _debug_ex_sanity_check(std::vector<excuse>& exs)
 {
     for (auto ex : exs)
         for (auto w : std::get<2>(ex))
@@ -35,28 +36,17 @@ void _debug_ex_sanity_check(
 }
 
 // reads words from an excuse into separate strings, store in a vector
-std::vector<std::string> parse_words(std::string& str)
+vecstr parse_words(std::string& str)
 {
     static std::string seps = std::string(SEP);
-    std::vector<std::string> words;
+    vecstr words;
     for (auto itr = str.begin(); itr != str.end(); ++itr)
     {
         if ('A' <= *itr and *itr <= 'Z') // convert to lower
-        {
             *itr = 'a' + (*itr - 'A');
+        else if ('a' <= *itr and *itr <= 'z') // ignore lower
             continue;
-        }
-        if ('0' <= *itr and *itr <= '9') // ignore numbers
-        {
-            *itr = ' ';
-            continue;
-        }
-        for (auto c : seps) // ignore separators
-            if (*itr == c)
-            {
-                *itr = ' ';
-                break;
-            }
+        else *itr = ' ';
     }
     std::stringstream ss(str); // extract words with string stream
     std::string str2;
@@ -65,9 +55,7 @@ std::vector<std::string> parse_words(std::string& str)
     return words;
 }
 
-void print_matches(const std::vector<std::string>& kws,
-    std::vector<std::tuple<std::string, u32, std::vector<std::string> > >& exs,
-    u32 set)
+void print_matches(const vecstr& kws, std::vector<excuse>& exs, u32 set)
 {
     printf("Excuse Set #%u\n", set);
     for (auto ex = exs.begin(); ex != exs.end(); ++ex) // count keywords in each
@@ -98,8 +86,8 @@ int main(int argc, char **argv)
 {
     u32 K, E, set = 0;
     std::string str;
-    std::vector<std::string> kw;
-    std::vector<std::tuple<std::string, u32, std::vector<std::string> > > ex;
+    vecstr kw;
+    std::vector<excuse> ex;
     while (++set, scanf("%u %u", &K, &E) == 2)
     {
         assert(K and K <= MAX_K);
@@ -118,7 +106,7 @@ int main(int argc, char **argv)
         {
             std::getline(std::cin, str);
             assert(str.length());
-            std::tuple<std::string, u32, std::vector<std::string> > tp;
+            excuse tp;
             std::get<0>(tp) = str;
             std::get<1>(tp) = 0;
             std::get<2>(tp) = parse_words(str);
