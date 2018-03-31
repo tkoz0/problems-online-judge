@@ -4,19 +4,19 @@
 #include <assert.h>
 #include <math.h>
 
-#include <iostream>
 #include <map>
 #include <string>
 
-#define DLIM 10.0F
-#define GLIM 1000.0F
-#define SMIN 1
-#define SMAX 32767
-#define NMAX 100
-#define SWEEP_TIME 5.0F
-#define TOLERANCE 0.1F
-#define PI 3.1415926F
 typedef uint32_t u32;
+
+#define MAX_PLANES 100
+#define RADIUS 10.0
+#define TIME_SEC 5.0
+#define TIME_HR (TIME_SEC / 3600.0)
+#define TOLERANCE 0.10
+#define SPEED_LIM 1000.0
+#define PI 3.14159265358979323846
+#define RADIANS(x) (x * PI / 180.0)
 
 // warning messages
 #define EW " -- equipment warning"
@@ -25,152 +25,153 @@ typedef uint32_t u32;
 #define DE " -- domain exited"
 #define DL " -- domain loss"
 
-struct pos
-{
-    float A, D, G;
-    // A = asimuth, angle like clock, 12 is north
-    // D = distance, radar to plane
-    // G = ground speed
-};
+struct pos { double a, d, g; }; // angle, distance, ground speed
 
-// compares 2 digit strings, orders ascending, if identical numbers then it
-// orders by string length
-struct custom_strcmp
-{
-    bool operator()(const std::string& a, const std::string& b)
-    {
-        u32 ia = 0, ib = 0;
-        for (char c : a)
-        {
-            assert('0' <= c and c <= '9');
-            ia *= 10, ia += c - '0';
-        }
-        for (char c : b)
-        {
-            assert('0' <= c and c <= '9');
-            ib *= 10, ib += c - '0';
-        }
-        if (ia != ib) return ia < ib;
-        return a.length() < b.length();
-    }
-};
+#include <iostream>
 
-// converts to x,y and uses distance formula
-float polar_distance(float r1, float a1, float r2, float a2)
+std::ostream& operator<<(std::ostream& o, const pos p)
 {
-    // conversion of coordinate systems is unnecessary since the original is
-    // a same size rotation and angular reflection of standard polar system
-    float dx = r1*cos(a1*PI/180.0F) - r2*cos(a2*PI/180.0F);
-    float dy = r1*sin(a1*PI/180.0F) - r2*sin(a2*PI/180.0F);
-//    printf("dx = %f, dy = %f\n",dx,dy);
-    return sqrt(dx*dx + dy*dy);
+    o << "(" << p.a << "," << p.d << "," << p.g << ")";
+    return o;
 }
 
-void print_warnings(const std::map<std::string, pos, custom_strcmp>& s1,
-                    const std::map<std::string, pos, custom_strcmp>& s2)
+// equipment warning: avg reported speed >10% off from calculated speed
+inline bool same_plane_ew(pos p1, pos p2)
 {
-    custom_strcmp sc; // string comparison functor
-//    for (auto a : s1) printf("--s1 %s\n",a.first.c_str());
-//    for (auto a : s2) printf("--s2 %s\n",a.first.c_str());
-    auto itr1 = s1.begin(), itr2 = s2.begin();
-    while (itr1 != s1.end()) // loop until s1 finishes
+    double dx = p2.d * cos(RADIANS(p2.a)) - p1.d * cos(RADIANS(p1.a));
+    double dy = p2.d * sin(RADIANS(p2.a)) - p1.d * sin(RADIANS(p1.a));
+    double calcspeed = sqrt(dx * dx + dy * dy) / TIME_HR;
+    double avgreported = (p1.g + p2.g) / 2.0;
+    return fabsl(avgreported - calcspeed) > (TOLERANCE * avgreported);
+//    std::cout<<p1<<p2<<b<<",calc="<<calcspeed<<",avg="<<avgreported<<std::endl;
+}
+
+// its speed+10% is sufficient to cover distance between position and the edge
+inline bool speed_to_edge_sufficient(pos p)
+{
+    double from_edge = RADIUS - p.d;
+    double max_dist = (p.g * (1.0 + TOLERANCE)) * TIME_HR;
+    return from_edge <= max_dist;
+}
+
+char* scan_str() // reads consecutive string without whitespace
+{
+    char c;
+    while (scanf("%c", &c) == 1)
+        if (c != ' ' and c != '\n')
+            goto scan_str_start;
+    return NULL; // reach EOF
+    scan_str_start:
+    size_t l = 2, i = 0;
+    char *str = (char*) malloc(sizeof(char) * l);
+    assert(str);
+    str[i++] = c;
+    while (scanf("%c", &c) == 1) // read chars and reallocate
     {
-        if (itr2 == s2.end()) // remaining in s1 not in s2
+        if (c == ' ' or c == '\n') break;
+        str[i++] = c;
+        str = (char*) realloc(str, sizeof(char) * (++l));
+    }
+    str[i] = '\0'; // null terminate
+    return str;
+}
+
+inline u32 str_to_u32(char *str) // interprets string as integer
+{
+    assert(str);
+    u32 i = 0;
+    while (*str) i *= 10, i += *str - '0', ++str;
+    return i;
+}
+
+void print_warnings(const std::map<u32, std::pair<std::string, pos> >& s1,
+                    const std::map<u32, std::pair<std::string, pos> >& s2)
+{
+//    printf("pw_s1:");for(auto u:s1)printf(" %s",u.second.first.c_str());printf("\n");
+//    printf("pw_s2:");for(auto u:s2)printf(" %s",u.second.first.c_str());printf("\n");
+    auto itr1 = s1.begin(), itr2 = s2.begin();
+    while (itr1 != s1.end()) // loop to s1 end
+    {
+        if (itr2 == s2.end()) // finish s1 (disappeared planes)
         {
             for (; itr1 != s1.end(); ++itr1)
             {
-                float maxdist = (itr1->second.G * (1.0F + TOLERANCE))
-                        * (SWEEP_TIME/3600.0F);
-                if (DLIM - itr1->second.D <= maxdist)
-                    printf("%5s%s\n", itr1->first.c_str(), DE);
-                else printf("%5s%s\n", itr1->first.c_str(), DL);
+                if (speed_to_edge_sufficient(itr1->second.second))
+                    printf("%5s%s\n", itr1->second.first.c_str(), DE);
+                else printf("%5s%s\n", itr1->second.first.c_str(), DL);
             }
             break;
         }
-        assert(itr1 != s1.end() and itr2 != s2.end());
-        if (itr1->first == itr2->first) // ids match
+        assert(itr1 != s1.end());
+        if (itr1->first < itr2->first) // s1<s2 --> iterate s1 forward
         {
-            // average reported speed, calculated speed from positions
-            float avgspeed = (itr1->second.G + itr2->second.G) / 2.0F;
-            float calcspeed = polar_distance(itr1->second.D, itr1->second.A,
-                    itr2->second.D, itr2->second.A) * (3600.0F/SWEEP_TIME);
-//            printf("avg = %f, calc = %f\n",avgspeed,calcspeed);
-            if (fabs(avgspeed - calcspeed) > TOLERANCE * calcspeed)
-                printf("%5s%s\n", itr1->first.c_str(), EW);
+            if (speed_to_edge_sufficient(itr1->second.second))
+                printf("%5s%s\n", itr1->second.first.c_str(), DE);
+            else printf("%5s%s\n", itr1->second.first.c_str(), DL);
+            ++itr1;
+        }
+        else if (itr1->first > itr2->first) // s1>s2 --> iterate s2 forward
+        {
+            if (speed_to_edge_sufficient(itr2->second.second))
+                printf("%5s%s\n", itr2->second.first.c_str(), NI);
+            else printf("%5s%s\n", itr2->second.first.c_str(), NA);
+            ++itr2;
+        }
+        else // same, check for equipment warning
+        {
+            assert(itr1->first == itr2->first);
+            if (same_plane_ew(itr1->second.second, itr2->second.second))
+                printf("%5s%s\n", itr1->second.first.c_str(), EW);
             ++itr1, ++itr2;
         }
-        else if (sc(itr1->first, itr2->first)) // search s1
-            for (; itr1 != s1.end()
-                    and sc(itr1->first, itr2->first); ++itr1)
-            {
-                float maxdist = (itr1->second.G * (1.0F + TOLERANCE))
-                        * (SWEEP_TIME/3600.0F);
-                if (DLIM - itr1->second.D <= maxdist)
-                    printf("%5s%s\n", itr1->first.c_str(), DE);
-                else printf("%5s%s\n", itr1->first.c_str(), DL);
-            }
-        else // search s2
-        {
-            assert(sc(itr2->first, itr1->first));
-            for (; itr2 != s2.end()
-                    and sc(itr2->first, itr1->first); ++itr2)
-            {
-                float maxdist = (itr2->second.G * (1.0F + TOLERANCE))
-                        * (SWEEP_TIME/3600.0F);
-                if (DLIM - itr2->second.D <= maxdist)
-                    printf("%5s%s\n", itr2->first.c_str(), NI);
-                else printf("%5s%s\n", itr2->first.c_str(), NA);
-            }
-        }
     }
-    for (; itr2 != s2.end(); ++itr2) // finish planes in s2 (if needed)
+    for (; itr2 != s2.end(); ++itr2) // finish s2 (newly appeared planes)
     {
-        float maxdist = (itr2->second.G * (1.0F + TOLERANCE))
-                * (SWEEP_TIME/3600.0F);
-        if (DLIM - itr2->second.D <= maxdist)
-            printf("%5s%s\n", itr2->first.c_str(), NI);
-        else printf("%5s%s\n", itr2->first.c_str(), NA);
+        if (speed_to_edge_sufficient(itr2->second.second))
+            printf("%5s%s\n", itr2->second.first.c_str(), NI);
+        else printf("%5s%s\n", itr2->second.first.c_str(), NA);
     }
 }
 
 int main(int argc, char **argv)
 {
-    u32 N1, N2, scenario = 0;
-    int r;
-    std::map<std::string, pos, custom_strcmp> s1, s2;
-    std::string S;
+    u32 scenario = 0, N;
+    std::map<u32, std::pair<std::string, pos> > s1, s2;
     pos p;
-    while (++scenario, scanf("%u", &N1) == 1)
+    char *str;
+    int r;
+//    char *z;while ((z=scan_str())){printf("%s\n",z);free(z);}return 0;
+    while (++scenario, scanf("%u", &N) == 1) // next scenario
     {
-        assert(N1 <= NMAX);
+        assert(N <= MAX_PLANES);
         s1.clear();
-        s2.clear();
-        while (N1--) // radar sweep 1
+        while (N--) // read sweep 1
         {
-            std::cin >> S;
-            r = scanf("%f %f %f", &p.A, &p.D, &p.G);
+            str = scan_str();
+            assert(str);
+            r = scanf("%lf %lf %lf", &p.a, &p.d, &p.g);
             assert(r == 3);
-//            assert(SMIN <= S and S < SMAX);
-            assert(S.length() <= 5);
-            assert(0.0 <= p.A and p.A < 360.0F);
-            assert(0.0 <= p.D and p.D <= DLIM);
-            assert(0.0 <= p.G and p.G < GLIM);
-            s1[S] = p;
+            assert(0.0 <= p.a and p.a < 360.0);
+            assert(0.0 <= p.d and p.d <= RADIUS);
+            assert(0.0 <= p.g and p.g < SPEED_LIM);
+            s1[str_to_u32(str)] = std::make_pair(std::string(str), p);
+            free(str);
         }
-        r = scanf("%u", &N2);
+        r = scanf("%u", &N);
         assert(r == 1);
-        assert(N2 <= NMAX);
-        while (N2--) // radar sweep 2
+        assert(N <= MAX_PLANES);
+        s2.clear();
+        while (N--) // read sweep 2
         {
-            std::cin >> S;
-            r = scanf("%f %f %f", &p.A, &p.D, &p.G);
+            str = scan_str();
+            assert(str);
+            r = scanf("%lf %lf %lf", &p.a, &p.d, &p.g);
             assert(r == 3);
-//            assert(SMIN <= S and S < SMAX);
-            assert(S.length() <= 5);
-            assert(0.0 <= p.A and p.A < 360.0F);
-            assert(0.0 <= p.D and p.D <= DLIM);
-            assert(0.0 <= p.G and p.G < GLIM);
-            s2[S] = p;
+            assert(0.0 <= p.a and p.a < 360.0);
+            assert(0.0 <= p.d and p.d <= RADIUS);
+            assert(0.0 <= p.g and p.g < SPEED_LIM);
+            s2[str_to_u32(str)] = std::make_pair(std::string(str), p);
+            free(str);
         }
         printf("Scenario # %u\n", scenario);
         print_warnings(s1, s2);
