@@ -25,6 +25,15 @@ void _debug_kw_sanity_check(std::vector<std::string>& kws)
             assert('a' <= c and c <= 'z');
 }
 
+void _debug_ex_sanity_check(
+    std::vector<std::tuple<std::string, u32, std::vector<std::string> > >& exs)
+{
+    for (auto ex : exs)
+        for (auto w : std::get<2>(ex))
+            for (auto c : w)
+                assert('a' <= c and c <= 'z');
+}
+
 // reads words from an excuse into separate strings, store in a vector
 std::vector<std::string> parse_words(std::string& str)
 {
@@ -69,20 +78,19 @@ void print_matches(const std::vector<std::string>& kws,
                     ++std::get<1>(*ex);
                     break;
                 }
-    // sort by number of keywords
+    u32 worst = 0;
+    for (auto ex : exs) worst = std::max(worst, std::get<1>(ex));
+/*    // sort by number of keywords
     std::stable_sort(exs.begin(), exs.end(),
         [](const std::tuple<std::string, u32, std::vector<std::string> >& a,
            const std::tuple<std::string, u32, std::vector<std::string> >& b)
         {
             return std::get<1>(a) > std::get<1>(b);
         }
-    );
-    u32 worst = std::get<1>(exs.front()); // worst number of keywords
+    );*/
     for (auto ex : exs) // print excuses
-    {
-        if (std::get<1>(ex) != worst) break; // not worst
-        std::cout << std::get<0>(ex) << std::endl;
-    }
+        if (std::get<1>(ex) == worst)
+            std::cout << std::get<0>(ex) << std::endl;
     printf("\n");
 }
 
@@ -116,6 +124,7 @@ int main(int argc, char **argv)
             std::get<2>(tp) = parse_words(str);
             ex.push_back(tp);
         }
+        _debug_ex_sanity_check(ex);
         print_matches(kw, ex, set);
     }
     return 0;
