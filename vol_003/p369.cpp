@@ -24,4 +24,5 @@ int main(int argc, char **argv)
         printf("%u things taken %u at a time is %lu exactly.\n",
                 n, m, binom(n, m));
     }
+    return 0;
 }
