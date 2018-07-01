@@ -54,7 +54,7 @@ def print_world():
         print()
 
 for cmd in sys.stdin: # process each command
-    cmd = cmd[:-1].split(' ') # do not include new line char
+    cmd = cmd[:-1].split() # do not include new line char
     if cmd[0] == 'quit': break # end of input
     a = int(cmd[1])
     b = int(cmd[3])

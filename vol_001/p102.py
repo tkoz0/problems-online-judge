@@ -4,7 +4,7 @@ orders = ['BCG', 'BGC', 'CBG', 'CGB', 'GBC', 'GCB'] # alphabetically sorted
 
 for line in sys.stdin:
     # input order BGC BGC BGC (each of the 3 bins)
-    n = list(map(int,line[:-1].split(' '))) # extract integers
+    n = list(map(int,line[:-1].split())) # extract integers
     moved = [0]*6 # amount moved for each of 6 possibilities
     # count moved amount in each configuration
     moved[0] = n[3] + n[6] + n[2] + n[8] + n[1] + n[4]
