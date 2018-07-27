@@ -9,34 +9,32 @@ for line in sys.stdin:
     assert 2 <= d <= 6
     assert 1 <= s <= 64
     assert 1 <= b <= 100
-    odd = input() == 'O' # parity type
+    parity = (1 if input() == 'O' else 0) # parity type
     disks = []
-    for z in range(d): # read disk data, split by blocks
-        istr = input()
-        assert len(istr) == s*b
-        disks.append(list(list(istr[i:i+s]) for i in range(0,len(istr),s)))
+    for z in range(d): # read disk data
+        disks.append(list(input()))
+        assert len(disks[-1]) == s*b
     valid = True
-    for block in range(b): # solve for unknowns
-        if not valid: break
-        for bit in range(s):
-            xcount, xi = 0, -1 # count unknowns and index of an unknown (disk #)
-            for z in range(d):
-                if disks[z][block][bit] == 'x': xcount += 1; xi = z
-            if xcount > 1: valid = False; break
-            if xcount == 1: # must recalculate unavaliable bit
-                u = 1 if odd else 0 # compute unavailable value
-                for z in range(d):
-                    if z != xi: u ^= int(disks[z][block][bit])
-                disks[xi][block][bit] = str(u)
-            p = 0 # verify that xor of disks = parity type
-            for z in range(d): p ^= int(disks[z][block][bit])
-            if p != (1 if odd else 0): valid = False; break
-    hexstr = '' # concatenate non parity blocks
+    for bit in range(s*b):
+        xs, xi = 0, -1 # unknowns and disk# for an unknown bit
+        for disk in range(d):
+            if disks[disk][bit] == 'x': xs += 1; xi = disk
+        if xs > 1: valid = False; break # cannot recover data
+        if xs == 1: # recover missing bit
+            u = parity
+            for disk in range(d):
+                if disk != xi: u ^= int(disks[disk][bit])
+            disks[xi][bit] = str(u)
+        p = 0
+        for disk in range(d): p ^= int(disks[disk][bit])
+        if p != parity: valid = False; break
+    data = '' # make binary string of data by concatenating non parity blocks
     if valid:
         for block in range(b):
             for disk in range(d):
-                if disk != block % d: hexstr += ''.join(disks[disk][block])
-    while len(hexstr) % 4 != 0: hexstr += '0'
-    if hexstr != '': hexstr = '%X' % int(hexstr,2) # convert to hexadecimal
-    if valid: print('Disk set %d is valid, contents are: %s' % (counter,hexstr))
+                if disk != block % d: data += \
+                                        ''.join(disks[disk][s*block:s*block+s])
+    while len(data) % 4 != 0: data += '0'
+    if data != '': data = '%X' % int(data,2)
+    if valid: print('Disk set %d is valid, contents are: %s' % (counter,data))
     else: print('Disk set %d is invalid.' % counter)
