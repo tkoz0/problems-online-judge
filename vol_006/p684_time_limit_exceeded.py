@@ -15,9 +15,9 @@ def det(M):
         # this ensures an integer multiple of row r can be subtracted
         for rr in range(r+1,len(M)):
             if M[rr][r] == 0: continue
+            submult = M[rr][r]
             for cc in range(r,len(M)): M[rr][cc] *= M[r][r]
             mult *= M[r][r] # result of multiplying row by multiple
-            submult = M[rr][r] // M[r][r]
             # adding row multiple doesnt change determinant
             for cc in range(r,len(M)): M[rr][cc] -= submult*M[r][cc]
             assert M[rr][r] == 0
