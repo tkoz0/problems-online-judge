@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <math.h>
 typedef uint32_t u32;
 
 bool perf_square(u32 n)
@@ -27,7 +28,9 @@ int main(int argc, char **argv)
     while (scanf("%u",&n) == 1)
     {
         if (!n) break;
-        if (perf_square(n)) printf("yes\n");
+        u32 root = u32(sqrt(double(n)));
+//        if (perf_square(n)) printf("yes\n");
+        if (root*root == n) printf("yes\n");
         else printf("no\n");
     }
     return 0;
