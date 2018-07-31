@@ -31,4 +31,5 @@ int main(int argc, char **argv)
         for (float z : nums) if (z > avg) ++above_count;
         printf("%.3f%%\n",100.0F*float(above_count)/float(N));
     }
+    return 0;
 }
