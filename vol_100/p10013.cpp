@@ -31,8 +31,13 @@ int main(int argc, char **argv)
         for (u32 i = M; i--;) a[i] += b[i]; // store sum in char a[]
         for (u32 i = M-1; i--;) // i is position for carry
         {
-            a[i] += a[i+1]/10; // carry 1 (without branch / if statement)
-            a[i+1] %= 10; // keep lower digit
+//            a[i] += a[i+1]/10; // carry 1 (without branch / if statement)
+//            a[i+1] %= 10; // keep lower digit
+            if (a[i+1] >= 10) // carry without division
+            {
+                ++a[i];
+                a[i+1] -= 10;
+            }
         }
         for (u32 i = 0; i < M; ++i) a[i] += '0'; // convert to print output
         a[M] = '\0'; // null for string output
