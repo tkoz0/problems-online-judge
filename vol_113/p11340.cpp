@@ -7,19 +7,23 @@
 #include <iostream>
 #include <unordered_map>
 typedef uint32_t u32;
+typedef uint8_t u8;
+
+u32 pay[256];
 
 int main(int argc, char **argv)
 {
     u32 N, K, p, M, paid;
-    char ch;
+    u8 ch;
     std::string line;
     std::cin >> N;
 //    assert(N and N <= 5);
     while (N--)
     {
+        for (u32 i = 0; i < 256; ++i) pay[i] = 0;
         std::cin >> K;
 //        assert(K and K <= 100);
-        std::unordered_map<char,u32> pay;
+//        std::unordered_map<char,u32> pay;
         while (K--)
         {
             std::cin >> ch >> p;
@@ -36,8 +40,10 @@ int main(int argc, char **argv)
 //            printf("line %s\n",line.c_str());
             for (auto itr = line.begin(); itr != line.end(); ++itr)
             {
-                auto itr2 = pay.find(*itr);
-                if (itr2 != pay.end()) paid += itr2->second;
+                ch = *itr;
+                paid += pay[ch];
+//                auto itr2 = pay.find(*itr);
+//                if (itr2 != pay.end()) paid += itr2->second;
             }
         }
         printf("%u.%02u$\n",paid/100,paid%100);
