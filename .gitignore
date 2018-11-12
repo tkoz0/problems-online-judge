@@ -1,0 +1,5 @@
+.project
+.pydevproject
+*.out
+*.o
+*.pyc
