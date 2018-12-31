@@ -8,16 +8,15 @@ for case in range(1,1+N):
     assert 0 <= S < n # source server
     assert 0 <= T < n # destination server
     assert S != T
-    graph = dict() # map vertex num --> (adjacent vertex, latency)
-    for _ in range(n): graph[_] = set()
+    graph = [[] for _ in range(n)]
     for _ in range(m): # read edges to build graph
         s1, s2, w = map(int,input().split())
         assert 0 <= s1 < n
         assert 0 <= s2 < n
         assert 0 <= w <= 10000
         if s1 != s2:
-            graph[s1].add((s2,w))
-            graph[s2].add((s1,w))
+            graph[s1].append((s2,w))
+            graph[s2].append((s1,w))
 
     # use dijkstra's algorithm to find shortest path from S to T
     inf = 10000*20000 # guaranteed to be larger than any possible path
