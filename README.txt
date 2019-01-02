@@ -1,6 +1,6 @@
 UVa Online Judge
 List of Solved Problems
-Last updated on 2019-01-02 at 15-24-32
+Last updated on 2019-01-02 at 15:29:20
 
 Problems are separated by volume, organized into a grid for each.
 Row is tens digit and column in ones digit.
