@@ -8,16 +8,16 @@ for _ in range(n):
         # try c is light
         light = True
         for w in d:
-            L = 0 if c in w[0] else 1
-            R = 0 if c in w[1] else 1
+            L = 0 if (c in w[0]) else 1
+            R = 0 if (c in w[1]) else 1
             if w[2] == 'even' and L != R: light = False
             if w[2] == 'up' and L <= R: light = False
             if w[2] == 'down' and L >= R: light = False
         # try c is heavy
         heavy = True
         for w in d:
-            L = 1 if c in w[0] else 0
-            R = 1 if c in w[1] else 0
+            L = 1 if (c in w[0]) else 0
+            R = 1 if (c in w[1]) else 0
             if w[2] == 'even' and L != R: heavy = False
             if w[2] == 'up' and L <= R: heavy = False
             if w[2] == 'down' and L >= R: heavy = False
@@ -25,7 +25,7 @@ for _ in range(n):
             print(c,'is the counterfeit coin and it is light.')
             thiscase += 1
         if heavy:
-            print(c,'is the cointerfeit coin and it is heavy.')
+            print(c,'is the counterfeit coin and it is heavy.')
             thiscase += 1
     assert thiscase == 1
 
