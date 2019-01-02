@@ -5,7 +5,7 @@ import sys
 
 print('UVa Online Judge')
 print('List of Solved Problems')
-print('Last updated',time.strftime('on %Y-%m-%d at %H-%M-%S'))
+print('Last updated',time.strftime('on %Y-%m-%d at %H:%M:%S'))
 print()
 print('Problems are separated by volume, organized into a grid for each.')
 print('Row is tens digit and column in ones digit.')
