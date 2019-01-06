@@ -26,12 +26,13 @@ while True:
                 break
         if found: break
     assert contour != ''
+
     for r in range(len(marked)): # perform region filling
         for c in range(len(marked[r])):
             if marked[r][c]: continue # already part of a filled region
             if grid[r][c] == contour: continue # not inside a region
             stack = [(r,c)] # grid positions to search, iterative DFS
-            marking_char = '' # the non space char in this region
+            marking_char = ''
             region = set() # positions in this region
             while len(stack): # this should not mark the contours
                 rr, cc = stack.pop()
@@ -40,19 +41,15 @@ while True:
                     continue
                 if grid[rr][cc] == contour: continue # edge of region
                 if marked[rr][cc]: continue # was already marked
-                if grid[rr][cc] != ' ': # found marking char
+                if grid[rr][cc] != ' ':
                     if marking_char == '': marking_char = grid[rr][cc]
                     else: assert grid[rr][cc] == marking_char
                 marked[rr][cc] = True # mark visited cell
                 region.add((rr,cc)) # position in current region
                 # DFS to adjacent cells
                 stack += [(rr+1,cc),(rr,cc+1),(rr-1,cc),(rr,cc-1)]
-            if marking_char == '': continue # unmarked region
-            else: # fill region
-                for r,c in region:
-                    grid[r][c] = marking_char
-    # print results
-    for r in grid:
-        print(''.join(r))
+            if marking_char != '': # fill region with same char
+                for rr,cc in region: grid[rr][cc] = marking_char
+    for r in grid: print(''.join(r)) # print results
     print(end_line)
 
