@@ -1,4 +1,3 @@
-import sys
 
 while True:
     grid = [] # 2d array of characters
