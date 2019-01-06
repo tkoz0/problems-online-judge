@@ -20,6 +20,9 @@ for line in sys.stdin:
     for problem in map(int,line.split()):
         problems.add(problem)
 
+print('Solved a total of %d problems.'%len(problems))
+print()
+
 volumes = set() # list of volumes from which at least 1 problem was solved
 results = dict() # map volume to 2d grid of booleans for solved status
 # each grid is 10x10, index by row=tens and col=ones
@@ -35,7 +38,13 @@ for problem in problems:
 # output results
 
 for volume in sorted(volumes): # print results in sorted order
-    print('Volume %3d:'%volume)
+    print('Volume %3d: '%volume,end='')
+    solved = 0
+    for r in range(10):
+        for c in range(10):
+            if results[volume][r][c]: solved += 1
+    if solved == 100: print('Complete')
+    else: print('(%2d / 100)'%solved)
     print()
     for r in range(10):
         for c in range(10):
