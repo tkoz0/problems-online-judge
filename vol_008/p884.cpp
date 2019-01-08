@@ -7,40 +7,27 @@
 
 int main(int argc, char **argv)
 {
-    bool *sieve = (bool*)calloc(1000000,1); // sieve primes
-    for (uint32_t i = 2; i <= 1000; ++i)
+    uint32_t *sieve = (uint32_t*)calloc(1000001,sizeof(uint32_t));
+    // count length of prime factorization for all numbers
+    for (uint32_t i = 2, *p = sieve+2; i <= 1000000; ++i, ++p)
     {
-        if (sieve[i]) continue; // composite
-        for (uint32_t j = i*i; j <= 1000000; j += i)
-            sieve[j] = true;
-    }
-    std::vector<uint32_t> primes; // make list of primes and their exponents
-    for (uint32_t i = 2; i < 1000000; ++i)
-    {
-        if (!sieve[i])
+        if (*p) continue; // not prime
+        for (uint32_t j = i; j <= 1000000; j += i) ++sieve[j]; // multiples
+        if (i <= 1000) // exponents
         {
-            primes.push_back(i);
-            if (i <= 1000) // include exponents up to 1000
-            {
-                uint32_t j = i;
-                while (j *= i, j <= 1000000)
-                    primes.push_back(j);
-            }
+            uint32_t m = i;
+            while (m *= i, m <= 1000000)
+                for (uint32_t j = m; j <= 1000000; j += m) ++sieve[j];
         }
     }
-    std::sort(primes.begin(),primes.end()); // put in order
-    uint32_t n;
-    while (scanf("%u",&n) == 1) // process factorials
+    // now convert sieve into a cumulative sum
+    for (uint32_t *p1 = sieve+1, *p2 = sieve+2; p2 <= sieve+1000000;
+        ++p1, ++p2) *p2 += *p1;
+    uint32_t n; // process input
+    while (scanf("%u",&n) == 1)
     {
         assert(2 <= n and n <= 1000000);
-        uint32_t count = 0;
-        for (auto p : primes)
-        {
-            if (p > n) break; // too large
-            count += n / p;
-        }
-        printf("%u\n",count);
+        printf("%u\n",sieve[n]);
     }
-    free(sieve);
     return 0;
 }
