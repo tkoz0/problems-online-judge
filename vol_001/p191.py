@@ -29,8 +29,10 @@ for _ in range(n):
     # box is [xleft,xright] cross [ybottom,ytop]
 
     # case 1: line is contained in rectangle
-    if xleft <= min(xstart,xend) and max(xstart,xend) <= xright \
-        and ybottom <= min(ystart,yend) and max(ystart,yend) <= ytop:
+    if min(xleft,xright) <= min(xstart,xend) \
+        and max(xstart,xend) <= max(xleft,xright) \
+        and min(ybottom,ytop) <= min(ystart,yend) \
+        and max(ystart,yend) <= max(ybottom,ytop):
         print('T')
         continue
 
@@ -48,8 +50,12 @@ for _ in range(n):
             # multiple from line start to intersect y=...
             c1 = (ybottom-ystart)/vy
             c2 = (ytop-ystart)/vy
-            if between(xoverlap[0],xoverlap[1],xstart+c1*vx): ibottom = True
-            if between(xoverlap[0],xoverlap[1],xstart+c2*vx): itop = True
+            if between(xoverlap[0],xoverlap[1],xstart+c1*vx) \
+                and on_line(xstart,ystart,xend,yend,xstart+c1*vx,ystart+c1*vy):
+                ibottom = True
+            if between(xoverlap[0],xoverlap[1],xstart+c2*vx) \
+                and on_line(xstart,ystart,xend,yend,xstart+c2*vx,ystart+c2*vy):
+                itop = True
             # if on_line(xstart,ystart,xend,yend,xstart+c1*vx,ystart+c1*vy):
             #     ibottom = True
             # if on_line(xstart,ystart,xend,yend,xstart+c2*vx,ystart+c2*vy):
@@ -58,12 +64,17 @@ for _ in range(n):
         if vx != 0.0:
             c1 = (xright-xstart)/vx
             c2 = (xleft-xstart)/vx
-            if between(yoverlap[0],yoverlap[1],ystart+c1*vy): iright = True
-            if between(yoverlap[0],yoverlap[1],ystart+c2*vy): ileft = True
+            if between(yoverlap[0],yoverlap[1],ystart+c1*vy) \
+                and on_line(xstart,ystart,xend,yend,xstart+c1*vx,ystart+c1*vy):
+                iright = True
+            if between(yoverlap[0],yoverlap[1],ystart+c2*vy) \
+                and on_line(xstart,ystart,xend,yend,xstart+c2*vx,ystart+c2*vy):
+                ileft = True
             # if on_line(xstart,ystart,xend,yend,xstart+c1*vx,ystart+c1*vy):
             #     iright = True
             # if on_line(xstart,ystart,xend,yend,xstart+c2*vx,ystart+c2*vy):
             #     ileft = True
         # find intersection of line with x=xleft and x=xright
     print('T' if (ileft or itop or iright or ibottom) else 'F')
+#    print('bools',ileft,itop,iright,ibottom)
 
