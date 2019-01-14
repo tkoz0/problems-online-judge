@@ -1,153 +1,163 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <vector>
-#include <unordered_map>
 
-struct u32p_hash // a hash function that should be good enough for this problem
-{
-    size_t operator()(const std::pair<uint32_t,uint32_t>& k) const
-    {
-        return k.first * k.second;
-    }
-};
+#define INFINITY 0xFFFFFFFFU
 
-struct pq
-{
-    std::vector<std::pair<uint32_t,std::pair<uint32_t,uint32_t> > > _heap;
-    std::unordered_map<std::pair<uint32_t,uint32_t>,uint32_t,
-        u32p_hash> _index_of;
-    pq(){}
-    ~pq(){}
-    void _swap(uint32_t a, uint32_t b)
-    {
-        auto tmp1 = _heap[a];
-        _heap[a] = _heap[b];
-        _heap[b] = tmp1;
-        _index_of[_heap[a].second] = a;
-        _index_of[_heap[b].second] = b;
-    }
-    void push(std::pair<uint32_t,uint32_t> item, uint32_t priority)
-    {
-        assert(_index_of.find(item) == _index_of.end());
-        uint32_t i = _heap.size();
-        _index_of[item] = i;
-        _heap.push_back(std::make_pair(priority,item));
-        while (i and _heap[(i-1)/2].first > _heap[i].first) // sift up
-        {
-            _swap(i,(i-1)/2);
-            i = (i-1)/2;
-        }
-    }
-    std::pair<uint32_t,uint32_t> pop()
-    {
-        assert(!_heap.empty());
-        auto result = _heap[0];
-        _heap[0] = _heap.back();
-        _heap.pop_back();
-        if (_heap.empty()) return result.second;
-        _index_of[_heap[0].second] = 0;
-        uint32_t i = 0;
-        while (2*i+1 < _heap.size()) // has left, sift down loop
-        {
-            uint32_t si = i;
-            if (_heap[2*i+1].first < _heap[si].first) si = 2*i+1;
-            if (2*i+2 < _heap.size() and
-                _heap[2*i+2].first < _heap[si].first) si = 2*i+2;
-            if (si == i) break;
-            _swap(i,si);
-            i = si;
-        }
-        return result.second;
-    }
-    void decrease_priority(std::pair<uint32_t,uint32_t> item, uint32_t priority)
-    {
-        assert(_index_of.find(item) != _index_of.end());
-        uint32_t i = _index_of[item];
-//        assert(priority <= _heap[i].first);
-        _heap[i].first = priority;
-        while (i and _heap[(i-1)/2].first > _heap[i].first) // sift up
-        {
-            _swap(i,(i-1)/2);
-            i = (i-1)/2;
-        }
-    }
-    bool empty() const { return _heap.empty(); }
-};
+struct qitem { uint32_t priority, r, c; };
+struct pos_t { uint32_t r, c; };
 
+// 1 <= N, M <= 999
 uint32_t maze[1000][1000];
 uint32_t dist[1000][1000];
+uint32_t index_of[1000][1000]; // position in heap
+std::vector<qitem> heap;
+uint32_t N, M;
 
-#define MIN(x,y) (x<y?x:y)
+void heap_swap(uint32_t i, uint32_t j)
+{
+    auto tmp1 = heap[i];
+    heap[i] = heap[j];
+    heap[j] = tmp1;
+    index_of[heap[i].r][heap[i].c] = i;
+    index_of[heap[j].r][heap[j].c] = j;
+}
+
+pos_t heap_pop()
+{
+    assert(!heap.empty());
+    pos_t result = {heap[0].r,heap[0].c};
+    heap[0] = heap.back();
+    heap.pop_back();
+    if (heap.empty()) return result;
+    index_of[heap[0].r][heap[0].c] = 0;
+    uint32_t i = 0; // sift down
+    while (2*i+1 < heap.size()) // has left child
+    {
+        uint32_t s = i; // index to swap with
+        if (heap[2*i+1].priority < heap[s].priority) s = 2*i+1;
+        if (2*i+2 < heap.size() and
+            heap[2*i+2].priority < heap[s].priority) s = 2*i+2;
+        if (s == i) break; // correct position
+        heap_swap(i,s);
+        i = s;
+    }
+    return result;
+}
+
+void heap_adjust(pos_t pos, uint32_t priority)
+{
+    uint32_t i = index_of[pos.r][pos.c];
+// printf("i=%u,newp=%u,heapp=%u\n",i,priority,heap[i].priority);
+    assert(priority <= heap[i].priority); // should decrease only
+    heap[i].priority = priority; // sift up
+    while (i and heap[(i-1)/2].priority > heap[i].priority)
+    {
+        heap_swap(i,(i-1)/2);
+        i = (i-1)/2;
+    }
+}
 
 int main(int argc, char **argv)
 {
-    uint32_t count, N, M; // num cases, rows, cols
-    scanf("%u",&count);
-    while (count--)
+    int r;
+    uint32_t cases;
+    r = scanf("%u",&cases);
+    assert(r == 1);
+    while (cases--)
     {
-        scanf("%u%u",&N,&M);
+        r = scanf("%u%u",&N,&M);
+        assert(r == 2);
         assert(N and N <= 999);
         assert(M and M <= 999);
-        pq q;
+        heap.clear();
         for (uint32_t i = 0; i < N; ++i)
+        {
             for (uint32_t j = 0; j < M; ++j)
             {
-                scanf("%u",&maze[i][j]);
-                dist[i][j] = -1; // infinity
-                q.push(std::make_pair(i,j),-1);
-            }
-        // use dijkstra's algorithm to find distances, source is its value
-        dist[0][0] = maze[0][0];
-        q.decrease_priority(std::make_pair(0,0),dist[0][0]);
-        while (!q.empty())
-        {
-for(auto z:q._heap)assert(z.first==dist[z.second.first][z.second.second]);
-            std::pair<uint32_t,uint32_t> x = q.pop();
-            uint32_t d2, dx = dist[x.first][x.second];
-            if (x.first > 0) // up
-            {
-                d2 = dx+maze[x.first-1][x.second];
-                if (d2 < dist[x.first-1][x.second])
-                {
-                    dist[x.first-1][x.second] = d2;
-                    q.decrease_priority(
-                        std::make_pair(x.first-1,x.second),d2);
-                }
-            }
-            if (x.second > 0) // left
-            {
-                d2 = dx+maze[x.first][x.second-1];
-                if (d2 < dist[x.first][x.second-1])
-                {
-                    dist[x.first][x.second] = d2;
-                    q.decrease_priority(
-                        std::make_pair(x.first,x.second-1),d2);
-                }
-            }
-            if (x.first < N-1) // down
-            {
-                d2 = dx+maze[x.first+1][x.second];
-                if (d2 < dist[x.first+1][x.second])
-                {
-                    dist[x.first+1][x.second] = d2;
-                    q.decrease_priority(
-                        std::make_pair(x.first+1,x.second),d2);
-                }
-            }
-            if (x.second < M-1) // right
-            {
-                d2 = dx+maze[x.first][x.second+1];
-                if (d2 < dist[x.first][x.second+1])
-                {
-                    dist[x.first][x.second+1] = d2;
-                    q.decrease_priority(
-                        std::make_pair(x.first,x.second+1),d2);
-                }
+                r = scanf("%u",&(maze[i][j]));
+//                assert(r == 1);
+                dist[i][j] = INFINITY;
+                index_of[i][j] = heap.size();
+                heap.push_back({INFINITY,i,j});
             }
         }
-        printf("%u\n",dist[N-1][M-1]); // distance to lower left corner
+        dist[0][0] = maze[0][0]; // source
+        heap[0].priority = maze[0][0]; // heap still valid
+// printf("__maze\n");
+// for(uint32_t _1=0;_1<N;++_1)
+// {
+//     for(uint32_t _2=0;_2<M;++_2)printf("%u ",maze[_1][_2]);
+//     printf("\n");
+// }
+// printf("--\n");
+// printf("__dist\n");
+// for(uint32_t _1=0;_1<N;++_1)
+// {
+//     for(uint32_t _2=0;_2<M;++_2)printf("%u ",dist[_1][_2]);
+//     printf("\n");
+// }
+// printf("--\n");
+// printf("__heap\n");
+// for(auto h:heap)printf("%u(%u,%u) ",h.priority,h.r,h.c);
+// printf("\n--\n");
+        while (!heap.empty()) // dijkstra's algorithm main loop
+        {
+            pos_t pos = heap_pop();
+            uint32_t d = dist[pos.r][pos.c], alt;
+// printf("pop = %u(%u,%u)\n",d,pos.r,pos.c);
+            assert(d != INFINITY);
+            if (pos.r > 0) // up
+            {
+                alt = d+maze[pos.r-1][pos.c];
+                if (alt < dist[pos.r-1][pos.c])
+                {
+                    dist[pos.r-1][pos.c] = alt;
+                    heap_adjust({pos.r-1,pos.c},alt);
+                }
+            }
+            if (pos.c > 0) // left
+            {
+                alt = d+maze[pos.r][pos.c-1];
+                if (alt < dist[pos.r][pos.c-1])
+                {
+                    dist[pos.r][pos.c-1] = alt;
+                    heap_adjust({pos.r,pos.c-1},alt);
+                }
+            }
+            if (pos.r < N-1) // down
+            {
+                alt = d+maze[pos.r+1][pos.c];
+                if (alt < dist[pos.r+1][pos.c])
+                {
+                    dist[pos.r+1][pos.c] = alt;
+                    heap_adjust({pos.r+1,pos.c},alt);
+                }
+            }
+            if (pos.c < M-1) // right
+            {
+                alt = d+maze[pos.r][pos.c+1];
+                if (alt < dist[pos.r][pos.c+1])
+                {
+                    dist[pos.r][pos.c+1] = alt;
+                    heap_adjust({pos.r,pos.c+1},alt);
+                }
+            }
+// printf("--\n");
+// printf("__dist\n");
+// for(uint32_t _1=0;_1<N;++_1)
+// {
+//     for(uint32_t _2=0;_2<M;++_2)printf("%u ",dist[_1][_2]);
+//     printf("\n");
+// }
+// printf("--\n");
+// printf("__heap\n");
+// for(auto h:heap)printf("%u(%u,%u) ",h.priority,h.r,h.c);
+// printf("\n--\n");
+        }
+        printf("%u\n",dist[N-1][M-1]);
     }
     return 0;
 }
