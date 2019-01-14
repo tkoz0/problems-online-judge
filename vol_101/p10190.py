@@ -2,11 +2,12 @@ import sys
 
 for line in sys.stdin:
     n, m = map(int,line.split())
-    seq = []
-    while n != 1:
-        seq.append(n)
+    # cannot create division sequence
+    if m < 2 or n == 0 or m > n: print('Boring!'); continue
+    seq = [n]
+    while n > 1:
         if n % m != 0: break
         n //= m
-    if n == 1: print(' '.join(map(str,seq+[1])))
+        seq.append(n)
+    if seq[-1] == 1: print(' '.join(map(str,seq)))
     else: print('Boring!')
-
