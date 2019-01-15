@@ -20,8 +20,10 @@ int main(int argc, char **argv)
             scanf("%u%u",&a,&b);
             --a, --b; // convert to 0 indexing
             assert(a <= b and b < n);
-            uint32_t beg = a, end, sum = 0;
-            uint32_t best_a = -1, best_b = -1, best_sum = 0;
+            uint32_t beg = a, end;
+            int64_t sum = 0;
+            uint32_t best_a = -1, best_b = -1;
+            int64_t best_sum = 0;
             for (end = a; end <= b; ++end)
             {
                 sum += dishes[end];
