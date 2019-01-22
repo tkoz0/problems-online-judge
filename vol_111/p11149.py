@@ -76,6 +76,13 @@ while True:
     A = [list(map(int,input().split())) for _ in range(n)]
     for _ in A: assert len(_) == n
 
+#DEBUG
+    print_matrix(A);print()
+    print_matrix(subtract(identity(n),A));print()
+    print_matrix(invert(subtract(identity(n),A)));print()
+    print_matrix(multiply(subtract(identity(n),A),invert(subtract(identity(n),A))));print()
+    quit()
+
     # compute: A + A^2 + ... + A^k = S
     # result is S = (I - A)^-1 * (I - A^(k+1)) if (I-A) is invertible
     I = identity(len(A))
