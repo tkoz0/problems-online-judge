@@ -17,10 +17,10 @@ for line in sys.stdin:
 
     # base case edit distances
     dp[0][0] = 0
-    for i in range(1,len(init)):
+    for i in range(1,1+len(init)):
         dp[i][0] = i
         back[i][0] = 2
-    for j in range(1,len(goal)):
+    for j in range(1,1+len(goal)):
         dp[0][j] = j
         back[0][j] = 3
 
@@ -36,7 +36,6 @@ for line in sys.stdin:
                 if 1+dp[i-1][j] == dp[i][j]: back[i][j] = 2
                 elif 1+dp[i][j-1] == dp[i][j]: back[i][j] = 3
                 else: back[i][j] = 4
-    continue
 
     # construct solution
     s_init = ''
@@ -44,21 +43,26 @@ for line in sys.stdin:
     i,j = len(init),len(goal)
     while i > 0 or j > 0:
         if back[i][j] == 1:
+            assert i>0 and j>0
             s_init += init[i-1]
             s_goal += goal[j-1]
             i,j = i-1,j-1
         elif back[i][j] == 2:
+            assert i>0
             s_init += init[i-1]
             s_goal += ' '
             i,j = i-1,j
         elif back[i][j] == 3:
+            assert j>0
             s_init += ' '
             s_goal += goal[j-1]
             i,j = i,j-1
         else:
+            assert i>0 and j>0
             s_init += init[i-1]
             s_goal += goal[j-1]
             i,j = i-1,j-1
+    assert i == 0 and j == 0
     s_init = s_init[::-1]
     s_goal = s_goal[::-1]
 
