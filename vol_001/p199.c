@@ -58,8 +58,8 @@ int main(int argc, char **argv)
             for (u32 x = 0; x <= n; ++x)
                 if (scanf("%i",&f[x][y]) != 1) assert(0);
         u32 pnum = 0;
-        for (u32 x = 0; x <= n; ++x) // setup P matrix
-            for (u32 y = 0; y <= n; ++y)
+        for (u32 y = n+1; y--;) // setup P matrix
+            for (u32 x = 0; x <= n; ++x)
             {
                 // boundary
                 if (x == 0 || x == n || y == 0 || y == n) P[x][y] = 0;
@@ -84,15 +84,15 @@ int main(int argc, char **argv)
                     if (P[x+x2][y+y2]) // P number, v contributes to main matrix
                         a[p-1][P[x+x2][y+y2]-1] = v[1+x2][1+y2] *n*n;
                     else // get from boundary, contribute to rhs
-                        rhs -= v[1+x2][1+y2]*B[x+x2][y+y2];
+                        rhs -= v[1+x2][1+y2]*B[x+x2][y+y2] *n*n;
                 }
-            b[p-1] = rhs *n*n;
+            b[p-1] = rhs; // TODO wrong, fix
         }
         // print results
-        for (u32 y = 0; y < pnum; ++y)
+        for (u32 r = 0; r < pnum; ++r)
         {
-            printf("%i",a[0][y]);
-            for (u32 x = 1; x < pnum; ++x) printf(" %i",a[x][y]);
+            printf("%i",a[r][0]);
+            for (u32 c = 1; c < pnum; ++c) printf(" %i",a[r][c]);
             printf("\n");
         }
         printf("%i",b[0]);
