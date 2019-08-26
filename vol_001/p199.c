@@ -17,16 +17,20 @@ int main(int argc, char **argv)
     u32 xof[(MAX_N-1)*(MAX_N-1)]; // max P to x
     u32 yof[(MAX_N-1)*(MAX_N-1)]; // map P to y
     i32 B[1+MAX_N][1+MAX_N]; // store boundary values
-    i32 **a; // reallocated on heap (probably is too much for stack)
-    a = malloc(sizeof(*a)*(MAX_N-1)*(MAX_N-1));
-    for (u32 z = 0; z < (MAX_N-1)*(MAX_N-1); ++z)
-        a[z] = malloc(sizeof(**a)*(MAX_N-1)*(MAX_N-1));
+//    i32 **a; // reallocated on heap (probably is too much for stack)
+//    a = (i32**)malloc(sizeof(*a)*(MAX_N-1)*(MAX_N-1));
+//    for (u32 z = 0; z < (MAX_N-1)*(MAX_N-1); ++z)
+//        a[z] = (i32*)malloc(sizeof(**a)*(MAX_N-1)*(MAX_N-1));
 //    i32 a[(MAX_N-1)*(MAX_N-1)][(MAX_N-1)*(MAX_N-1)]; // for solution
+    i32 a[(MAX_N-1)*(MAX_N-1)]; // store 1 row of the main matrix solution
     i32 b[(MAX_N-1)*(MAX_N-1)]; // for solution, both solutions offset by 1
     if (scanf("%u",&m) != 1) assert(0); // number of tests
+//return 0;//debug
     while (m--)
     {
         if (scanf("%u",&n) != 1) assert(0);
+//printf("n=%u\n",n);
+//if (n > MAX_N) return 0;//debug
         assert(2 <= n && n <= MAX_N);
         if (scanf("%i%i%i%i%i%i%i%i%i",&v[0][2],&v[1][2],&v[2][2], // v
                 &v[0][1],&v[1][1],&v[2][1],&v[0][0],&v[1][0],&v[2][0]) != 9)
@@ -47,17 +51,19 @@ int main(int argc, char **argv)
         for (u32 i = 0; i <= n; ++i)
         {
             if (scanf("%i",b3+i) != 1) assert(0);
-            B[0][i] = b3[i];
+            if (i != 0 && i != n) // hack suggested from forum
+                B[0][i] = b3[i];
         }
         for (u32 i = 0; i <= n; ++i)
         {
             if (scanf("%i",b4+i) != 1) assert(0);
-            B[n][i] = b4[i];
+            if (i != 0 && i != n) // hack suggested from forum
+                B[n][i] = b4[i];
         }
-        assert(b1[0] == b3[0]);
-        assert(b2[0] == b3[n]);
-        assert(b2[n] == b4[n]);
-        assert(b1[n] == b4[0]);
+        // assert(b1[0] == b3[0]); // not matching in given inputs
+        // assert(b2[0] == b3[n]);
+        // assert(b2[n] == b4[n]);
+        // assert(b1[n] == b4[0]);
 
         // printf("boundary\n");
         // for (u32 y = n+1; y--;)
@@ -71,7 +77,7 @@ int main(int argc, char **argv)
             for (u32 x = 0; x <= n; ++x)
                 if (scanf("%i",&f[x][y]) != 1) assert(0);
 
-//        continue; // debug
+//       continue; // debug
 
         u32 pnum = 0;
         for (u32 y = n+1; y--;) // setup P matrix
@@ -86,11 +92,13 @@ int main(int argc, char **argv)
                     yof[pnum] = y;
                 }
             }
+//printf("pnum=%u\n",pnum);
         // for each point, computed desired result
         for (u32 p = 1; p <= pnum; ++p)
         {
-            for (u32 z = 0; z < pnum*pnum; ++z) // zero matrix row
-                a[p-1][z] = 0;
+            for (u32 z = 0; z < pnum; ++z) // zero matrix row
+//                a[p-1][z] = 0;
+                a[z] = 0;
             i32 rhs = 0; // right hand side value
             u32 x = xof[p], y = yof[p];
             for (i32 x2 = -1; x2 <= 1; ++x2) // v and g matrices
@@ -99,24 +107,25 @@ int main(int argc, char **argv)
 //                    printf("p%u adding %i*%i\n",p,g[1+x2][1+y2],f[x+x2][y+y2]);
                     rhs += g[1+x2][1+y2]*f[x+x2][y+y2]; // g contributes to rhs
                     if (P[x+x2][y+y2]) // P number, v contributes to main matrix
-                    {
-                        a[p-1][P[x+x2][y+y2]-1] = v[1+x2][1+y2] *n*n;
-                    }
+//                        a[p-1][P[x+x2][y+y2]-1] = v[1+x2][1+y2] *n*n;
+                        a[P[x+x2][y+y2]-1] = v[1+x2][1+y2] *n*n;
                     else // get from boundary, contribute to rhs
-                    {
 //                        printf("p%u subtracting %i\n",p,v[1+x2][1+y2]*B[x+x2][y+y2] *n*n);
                         rhs -= v[1+x2][1+y2]*B[x+x2][y+y2] *n*n;
-                    }
                 }
-            b[p-1] = rhs; // TODO wrong, fix
-        }
-        // print results
-        for (u32 r = 0; r < pnum; ++r)
-        {
-            printf("%i",a[r][0]);
-            for (u32 c = 1; c < pnum; ++c) printf(" %i",a[r][c]);
+            b[p-1] = rhs;
+            // print row
+            printf("%i",a[0]);
+            for (u32 c = 1; c < pnum; ++c) printf(" %i",a[c]);
             printf("\n");
         }
+        // // print results
+        // for (u32 r = 0; r < pnum; ++r)
+        // {
+        //     printf("%i",a[r][0]);
+        //     for (u32 c = 1; c < pnum; ++c) printf(" %i",a[r][c]);
+        //     printf("\n");
+        // }
         printf("%i",b[0]);
         for (u32 x = 1; x < pnum; ++x) printf(" %i",b[x]);
         printf("\n");
