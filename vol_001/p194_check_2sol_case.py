@@ -30,8 +30,12 @@ def assert_triangle(a,A,b,B,c,C):
 def print_t(a,A,b,B,c,C):
     print('%.6f %.6f %.6f %.6f %.6f %.6f'%(a,A,b,B,c,C))
 
-for _ in range(sets):
-    a, A, b, B, c, C = map(float,input().split())
+def solve_t(a,A,b,B,c,C):
+    if (a <= 0.0 and a != -1.0) or (A <= 0.0 and A != -1.0) \
+        or (b <= 0.0 and b != -1.0) or (B <= 0.0 and B != -1.0) \
+        or (c <= 0.0 and c != -1.0) or (C <= 0.0 and C != -1.0):
+        print('Invalid input.');#print(14)
+        return
     if a == -1.0: a = None
     if A == -1.0: A = None
     if b == -1.0: b = None
@@ -75,47 +79,64 @@ for _ in range(sets):
                     if not c: c = math.sqrt(a*a+b*b-2.0*a*b*math.cos(C))
                     m = math.sin(C)/c
                 if a and b and c: # 3rd side computed or given
-# TODO see if an improper given 3rd side can mess this up
-                    if A: # compute smaller angle first (<pi/2 radians)
-                        if b < c: B = math.asin(b*m)
-                        else: C = math.asin(c*m)
-                    elif B:
-                        if a < c: A = math.asin(a*m)
-                        else: C = math.asin(c*m)
-                    elif C:
-                        if a < b: A = math.asin(a*m)
-                        else: B = math.asin(b*m)
-                    if not A: A = math.pi-B-C # compute last angle
-                    if not B: B = math.pi-A-C
-                    if not C: C = math.pi-A-B
-                    try:
-                        assert_triangle(a,A,b,B,c,C)
-                        print_t(a,A,b,B,c,C)
-                    except AssertionError: print('Invalid input.');#print(6)
+                    # check that sides are valid and law of cosines with 1 angle
+                    if a+b <= c or a+c <= b or b+c <= a \
+                        or (A and abs(a*a-b*b-c*c+2.0*b*c*math.cos(A)) > eps) \
+                        or (B and abs(b*b-a*a-c*c+2.0*a*c*math.cos(B)) > eps) \
+                        or (C and abs(c*c-a*a-b*b+2.0*a*b*math.cos(C)) > eps):
+                        print('Invalid input.');#print(13)
+                    else:
+                        if A: # compute smaller angle first (<pi/2 radians)
+                            if b < c: B = math.asin(b*m)
+                            else: C = math.asin(c*m)
+                        elif B:
+                            if a < c: A = math.asin(a*m)
+                            else: C = math.asin(c*m)
+                        elif C:
+                            if a < b: A = math.asin(a*m)
+                            else: B = math.asin(b*m)
+                        if not A: A = math.pi-B-C # compute last angle
+                        if not B: B = math.pi-A-C
+                        if not C: C = math.pi-A-B
+                        try:
+                            assert_triangle(a,A,b,B,c,C)
+                            print_t(a,A,b,B,c,C)
+                        except AssertionError: print('Invalid input.');#print(6)
                 else: # cases based on which sides are known (need 2)
                     two_solutions = False # set to true if arcsin is not pi/2
+                    # if asin errors then triangle is invalid
+                    # geometrically means side nonadjacent to angle is too short
+                    # if 2 solutions, then nonadjacent side is shorter than other
                     if a and b:
                         if a and A:
-                            B = b*math.sin(A)/a
-                            if abs(math.pi/2.0-B) > eps: two_solutions = True
+                            try: B = math.asin(b*math.sin(A)/a)
+                            except ValueError: print('Invalid input.');return
+                            if a > b+eps and abs(math.pi/2.0-B) > eps: two_solutions = True
                         else:
-                            A = a*math.sin(B)/b
+                            try: A = math.asin(a*math.sin(B)/b)
+                            except ValueError: print('Invalid input.');return
                             if abs(math.pi/2.0-A) > eps: two_solutions = True
                     elif a and c:
                         if a and A:
-                            C = c*math.sin(A)/a
+                            try: C = math.asin(c*math.sin(A)/a)
+                            except ValueError: print('Invalid input.');return
                             if abs(math.pi/2.0-C) > eps: two_solutions = True
                         else:
-                            A = a*math.sin(C)/c
+                            try: A = math.asin(a*math.sin(C)/c)
+                            except ValueError: print('Invalid input.');return
                             if abs(math.pi/2.0-A) > eps: two_solutions = True
                     elif b and c:
                         if b and B:
-                            C = c*math.sin(B)/b
+                            try: C = math.asin(c*math.sin(B)/b)
+                            except ValueError: print('Invalid input.');return
                             if abs(math.pi/2.0-C) > eps: two_solutions = True
                         else:
-                            B = b*math.sin(C)/c
+                            try: B = math.asin(b*math.sin(C)/c)
+                            except ValueError: print('Invalid input.');return
                             if abs(math.pi/2.0-B) > eps: two_solutions = True
-                    if two_solutions: print('Invalid input.');#print(10)
+                    if two_solutions:
+                        print('More than one solution.');#print(10)
+                        return
                     if (A and B) or (A and C) or (B and C): # 2 angles success
                         if not A: A = math.pi-B-C # compute 3rd angle
                         if not B: B = math.pi-A-C
@@ -129,15 +150,38 @@ for _ in range(sets):
                         except AssertionError:
                             print('Invalid input.');#print(12)
                     else: print('Invalid input.');#print(11)
-            else: # no angles, need 3 side lengths
-                if a+b > c and a+c > b and b+c > a: # triangle inequalities
-                    if a and b and c: # have all 3, use law of cosines
-                        if not A: A = math.acos((b*b+c*c-a*a)/(2.0*b*c))
-                        if not B: B = math.acos((a*a+c*c-b*b)/(2.0*a*c))
-                        if not C: C = math.acos((a*a+b*b-c*c)/(2.0*a*b))
-                        try:
-                            assert_triangle(a,A,b,B,c,C)
-                            print_t(a,A,b,B,c,C)
-                        except AssertionError: print('Invalid input.');#print(7)
-                    else: print('Invalid input.');#print(8)
+            else: # no angles, need 3 side lengths, check triangle inequalities
+                if a and b and c and a+b > c and a+c > b and b+c > a:
+                    if not A: A = math.acos((b*b+c*c-a*a)/(2.0*b*c))
+                    if not B: B = math.acos((a*a+c*c-b*b)/(2.0*a*c))
+                    if not C: C = math.acos((a*a+b*b-c*c)/(2.0*a*b))
+                    try:
+                        assert_triangle(a,A,b,B,c,C)
+                        print_t(a,A,b,B,c,C)
+                    except AssertionError: print('Invalid input.');#print(7)
                 else: print('Invalid input.');#print(9)
+
+if 0: # random case debugger
+    import random
+    print(100)
+    for _ in range(1000):
+        a = 100.0*random.random()
+        b = 100.0*random.random()
+        c = 100.0*random.random()
+        A = 3.0*random.random()
+        B = 3.0*random.random()
+        C = 3.0*random.random()
+        if A+B+C > 3.3: continue
+        if random.random() < 0.5: a = -1.0
+        if random.random() < 0.5: b = -1.0
+        if random.random() < 0.5: c = -1.0
+        if random.random() < 0.5: A = -1.0
+        if random.random() < 0.5: B = -1.0
+        if random.random() < 0.5: C = -1.0
+        print(a,A,b,B,c,C)
+    #    solve_t(a,A,b,B,c,C)
+    quit()
+
+for _ in range(sets):
+    a, A, b, B, c, C = map(float,input().split())
+    solve_t(a,A,b,B,c,C)
