@@ -27,6 +27,8 @@ def assert_triangle(a,A,b,B,c,C):
     assert abs(a1-a2) < eps and abs(a1-a3) < eps and abs(a2-a3) < eps
     assert abs(area-a1) < eps and abs(area-a2) < eps and abs(area-a3) < eps
 
+def print_t(a,A,b,B,c,C):
+    print('%.6f %.6f %.6f %.6f %.6f %.6f'%(a,A,b,B,c,C))
 
 for _ in range(sets):
     a, A, b, B, c, C = map(float,input().split())
@@ -38,15 +40,14 @@ for _ in range(sets):
     if C == -1.0: C = None
     if (a and a < eps) or (A and A < eps) or (b and b < eps) \
         or (B and B < eps) or (c and c < eps) or (C and C < eps):
-        print('Invalid input.');print(1) # values not positive
+        print('Invalid input.');#print(1) # values not positive
     else: # all inputs positive
         if (A and B) or (A and C) or (B and C): # 2 or 3 angles known
             if not A: A = math.pi-B-C
             if not B: B = math.pi-A-C
             if not C: C = math.pi-A-B
-            print('angles %f %f %f sum=%f'%(A,B,C,A+B+C))
             if A < eps or B < eps or C < eps: # angles should be positive
-                print('Invalid input.');print(2)
+                print('Invalid input.');#print(2)
             else:
                 if abs(math.pi-A-B-C) < eps: # angles should sum to pi
                     if a or b or c: # need to know a side length
@@ -58,22 +59,23 @@ for _ in range(sets):
                         if not c: c = m*math.sin(C)
                         try:
                             assert_triangle(a,A,b,B,c,C)
-                            print(a,A,b,B,c,C)
-                        except AssertionError: print('Invalid input.');print(3)
-                    else: print('Invalid input.');print(4)
-                else: print('Invalid input.');print(5)
+                            print_t(a,A,b,B,c,C)
+                        except AssertionError: print('Invalid input.');#print(3)
+                    else: print('Invalid input.');#print(4)
+                else: print('Invalid input.');#print(5)
         else: # 1 or 0 angles known
             if A or B or C: # 1 angle is known
                 if A and b and c: # 2 adjacent sides known, compute 3rd
-                    a = math.sqrt(b*b+c*c-2.0*b*c*math.cos(A))
+                    if not a: a = math.sqrt(b*b+c*c-2.0*b*c*math.cos(A))
                     m = math.sin(A)/a # for law of sines
                 elif B and a and c:
-                    b = math.sqrt(a*a+c*c-2.0*a*c*math.cos(B))
+                    if not b: b = math.sqrt(a*a+c*c-2.0*a*c*math.cos(B))
                     m = math.sin(B)/b
                 elif C and a and b:
-                    c = math.sqrt(a*a+b*b-2.0*a*b*math.cos(C))
+                    if not c: c = math.sqrt(a*a+b*b-2.0*a*b*math.cos(C))
                     m = math.sin(C)/c
-                if a and b and c: # was able to compute 3rd side
+                if a and b and c: # 3rd side computed or given
+# TODO see if an improper given 3rd side can mess this up
                     if A: # compute smaller angle first (<pi/2 radians)
                         if b < c: B = math.asin(b*m)
                         else: C = math.asin(c*m)
@@ -88,9 +90,45 @@ for _ in range(sets):
                     if not C: C = math.pi-A-B
                     try:
                         assert_triangle(a,A,b,B,c,C)
-                        print(a,A,b,B,c,C)
-                    except AssertionError: print('Invalid input.');print(6)
-                else: print('1 angle, not given both adjacent sides, not implemented')
+                        print_t(a,A,b,B,c,C)
+                    except AssertionError: print('Invalid input.');#print(6)
+                else: # cases based on which sides are known (need 2)
+                    two_solutions = False # set to true if arcsin is not pi/2
+                    if a and b:
+                        if a and A:
+                            B = b*math.sin(A)/a
+                            if abs(math.pi/2.0-B) > eps: two_solutions = True
+                        else:
+                            A = a*math.sin(B)/b
+                            if abs(math.pi/2.0-A) > eps: two_solutions = True
+                    elif a and c:
+                        if a and A:
+                            C = c*math.sin(A)/a
+                            if abs(math.pi/2.0-C) > eps: two_solutions = True
+                        else:
+                            A = a*math.sin(C)/c
+                            if abs(math.pi/2.0-A) > eps: two_solutions = True
+                    elif b and c:
+                        if b and B:
+                            C = c*math.sin(B)/b
+                            if abs(math.pi/2.0-C) > eps: two_solutions = True
+                        else:
+                            B = b*math.sin(C)/c
+                            if abs(math.pi/2.0-B) > eps: two_solutions = True
+                    if two_solutions: print('Invalid input.');#print(10)
+                    if (A and B) or (A and C) or (B and C): # 2 angles success
+                        if not A: A = math.pi-B-C # compute 3rd angle
+                        if not B: B = math.pi-A-C
+                        if not C: C = math.pi-A-B
+                        if not a: a = b*math.sin(A)/math.sin(B) # 3rd side
+                        if not b: b = a*math.sin(B)/math.sin(A)
+                        if not c: c = a*math.sin(C)/math.sin(A)
+                        try:
+                            assert_triangle(a,A,b,B,c,C)
+                            print_t(a,A,b,B,c,C)
+                        except AssertionError:
+                            print('Invalid input.');#print(12)
+                    else: print('Invalid input.');#print(11)
             else: # no angles, need 3 side lengths
                 if a+b > c and a+c > b and b+c > a: # triangle inequalities
                     if a and b and c: # have all 3, use law of cosines
@@ -99,7 +137,7 @@ for _ in range(sets):
                         if not C: C = math.acos((a*a+b*b-c*c)/(2.0*a*b))
                         try:
                             assert_triangle(a,A,b,B,c,C)
-                            print(a,A,b,B,c,C)
-                        except AssertionError: print('Invalid input.');print(7)
-                    else: print('Invalid input.');print(8)
-                else: print('Invalid input.');print(9)
+                            print_t(a,A,b,B,c,C)
+                        except AssertionError: print('Invalid input.');#print(7)
+                    else: print('Invalid input.');#print(8)
+                else: print('Invalid input.');#print(9)
