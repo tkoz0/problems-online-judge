@@ -19,12 +19,34 @@ def point_set_cmp(p,q): # point set ordering (by points)
     return len(p) - len(q)
 point_set_key = cmp_to_key(point_set_cmp)
 
+def coord_step(x,y): # divides by gcd(x,y) to get step amount
+    a, b = max(abs(x),abs(y)), min(abs(x),abs(y))
+    while b != 0: a, b = b, a % b
+    return (x//a,y//a)
+
+def in_bounds(x,y): return 0 <= x <= 9999 and 0 <= y <= 9999
+
 def find_line_sets(points): # main computation function
     sets = []
+    points_set = set(points) # for fast containment checking
     for i in range(len(points)): # for each possible pair
         for j in range(i+1,len(points)):
-            pass
-    return list(set(sets)) # remove duplicates
+            line = [points[i],points[j]]
+            step_x, step_y = coord_step(points[j][0]-points[i][0],
+                                        points[j][1]-points[i][1])
+            x, y = points[i] # starting point, move in step amounts
+            xx, yy = x + step_x, y + step_y
+            while in_bounds(xx,yy): # explore both directions
+                if (xx,yy) in points_set: line.append((xx,yy))
+                xx, yy = xx + step_x, yy + step_y
+            xx, yy = x - step_x, y - step_y
+            while in_bounds(xx,yy):
+                if (xx,yy) in points_set: line.append((xx,yy))
+                xx, yy = xx - step_x, yy - step_y
+            line = list(set(line)) # remove duplicates
+            if len(line) > 2: sets.append(sorted(line))
+#    return list(frozenset(sets)) # remove duplicates
+    return [list(ll) for ll in set(tuple(l) for l in sets)]
 
 def print_point_set(s): # print list of points in desired format
     print(''.join('(%4d,%4d)'%p for p in s))
