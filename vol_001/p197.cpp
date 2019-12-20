@@ -16,99 +16,91 @@ typedef std::vector<char> char1d;
 // set based on the orientation of block "a"
 // output the appropriate solution set when given user input
 
-struct CUBE
+// create cube and get dimensions
+u32 xlen(char3d& c) { return c.size(); }
+u32 ylen(char3d& c) { return c[0].size(); }
+u32 zlen(char3d& c) { return c[0][0].size(); }
+char3d new_cube(u32 X, u32 Y, u32 Z)
 {
-    u32 X, Y, Z; // dimensions
-    std::vector<std::vector<std::vector<char> > > cube;
-    // removed constructor so that 3d vector initializer lists work
-};
-
-CUBE new_cube(u32 X, u32 Y, u32 Z)
-{
-    return {X,Y,Z,std::vector<std::vector<std::vector<char> > >(X,
-                   std::vector<std::vector<char> >(Y,
-                    std::vector<char>(Z,'.'))) };
+    return char3d(X,char2d(Y,char1d(Z,'.')));
 }
 
-std::string encode(CUBE& cube) // cube --> 27 char string
+std::string encode(char3d& cube) // cube --> 27 char string
 {
-    assert(cube.X == 3 and cube.Y == 3 and cube.Z == 3);
+    assert(xlen(cube) == 3 and ylen(cube) == 3 and zlen(cube) == 3);
     std::string s = "";
     for (u32 x = 0; x < 3; ++x)
         for (u32 y = 0; y < 3; ++y)
             for (u32 z = 0; z < 3; ++z)
-                s.push_back(cube.cube[x][y][z]);
+                s.push_back(cube[x][y][z]);
     return s;
 }
 
-CUBE decode(std::string& s) // 27 char string --> cube
+char3d decode(std::string& s) // 27 char string --> cube
 {
     assert(s.length() == 27);
-    CUBE cube = new_cube(3,3,3);
+    char3d cube = new_cube(3,3,3);
     for (u32 x = 0; x < 3; ++x)
         for (u32 y = 0; y < 3; ++y)
             for (u32 z = 0; z < 3; ++z)
-                cube.cube[x][y][z] = s[9*x+3*y+z];
+                cube[x][y][z] = s[9*x+3*y+z];
     return cube;
 }
 
 // orientation of 7 pieces as given
-CUBE A0 = {2,1,3,{{{'a','a','a'}},{{'.','.','a'}}}};
-CUBE B0 = {1,2,2,{{{'b','b'},{'b','.'}}}};
-CUBE C0 = {2,1,3,{{{'.','c','.'}},{{'c','c','c'}}}};
-CUBE D0 = {1,3,2,{{{'d','.'},{'d','d'},{'.','d'}}}};
-CUBE E0 = {2,2,2,{{{'e','e'},{'.','e'}},{{'.','e'},{'.','.'}}}};
-CUBE F0 = {2,2,2,{{{'e','e'},{'.','e'}},{{'.','e'},{'.','.'}}}};
-CUBE G0 = {2,2,2,{{{'.','.'},{'g','g'}},{{'.','g'},{'.','g'}}}};
+char3d A0 = {{{'a','a','a'}},{{'.','.','a'}}};
+char3d B0 = {{{'b','b'},{'b','.'}}};
+char3d C0 = {{{'.','c','.'}},{{'c','c','c'}}};
+char3d D0 = {{{'d','.'},{'d','d'},{'.','d'}}};
+char3d E0 = {{{'e','e'},{'.','e'}},{{'.','e'},{'.','.'}}};
+char3d F0 = {{{'.','.'},{'.','f'}},{{'f','f'},{'.','f'}}};
+char3d G0 = {{{'.','.'},{'g','g'}},{{'.','g'},{'.','g'}}};
+std::vector<char3d> A, B, C, D, E, F, G; // for all possible orientations
 
 // rotation functions for 2d arrays
-std::vector<std::vector<char> > rot0(std::vector<std::vector<char> >& flat)
+char2d rot0(char2d& flat)
 {
-    auto rot = std::vector<std::vector<char> >(flat.size(),
-                             std::vector<char>('.',flat[0].size()));
+    auto rot = char2d(flat.size(),char1d('.',flat[0].size()));
     for (u32 x = 0; x < flat.size(); ++x)
         for (u32 y = 0; y < flat[0].size(); ++y)
             rot[x][y] = flat[x][y];
     return rot;
 }
-std::vector<std::vector<char> > rot90(std::vector<std::vector<char> >& flat)
+char2d rot90(char2d& flat)
 {
-    auto rot = std::vector<std::vector<char> >(flat.size(),
-                             std::vector<char>('.',flat[0].size()));
+    auto rot = char2d(flat[0].size(),char1d('.',flat.size()));
     for (u32 x = 0; x < flat[0].size(); ++x)
         for (u32 y = 0; y < flat.size(); ++y)
             rot[x][y] = flat[y][flat[0].size()-1-x];
     return rot;
 }
-std::vector<std::vector<char> > rot180(std::vector<std::vector<char> >& flat)
+char2d rot180(char2d& flat)
 {
-    auto rot = std::vector<std::vector<char> >(flat.size(),
-                             std::vector<char>('.',flat[0].size()));
+    auto rot = char2d(flat.size(),char1d('.',flat[0].size()));
     for (u32 x = 0; x < flat.size(); ++x)
         for (u32 y = 0; y < flat[0].size(); ++y)
             rot[x][y] = flat[flat.size()-1-x][flat[0].size()-1-y];
     return rot;
 }
-std::vector<std::vector<char> > rot270(std::vector<std::vector<char> >& flat)
+char2d rot270(char2d& flat)
 {
-    auto rot = std::vector<std::vector<char> >(flat.size(),
-                             std::vector<char>('.',flat[0].size()));
+    auto rot = char2d(flat[0].size(),char1d('.',flat.size()));
     for (u32 x = 0; x < flat[0].size(); ++x)
         for (u32 y = 0; y < flat.size(); ++y)
             rot[x][y] = flat[flat.size()-1-y][x];
     return rot;
 }
-std::vector<CUBE> all_rots(CUBE& cube) // get all rotations of a 2d array
+std::vector<char3d> all_rots(char3d& cube) // rotate around x axis
 {
-    std::vector<CUBE> results;
-    CUBE cube1(cube);
-    for (u32 x = 0; x < cube1.X; ++x) cube1.cube[x] = rot0(cube1.cube[x]);
-    CUBE cube2(cube);
-    for (u32 x = 0; x < cube2.X; ++x) cube2.cube[x] = rot90(cube2.cube[x]);
-    CUBE cube3(cube);
-    for (u32 x = 0; x < cube3.X; ++x) cube3.cube[x] = rot180(cube3.cube[x]);
-    CUBE cube4(cube);
-    for (u32 x = 0; x < cube4.X; ++x) cube4.cube[x] = rot270(cube4.cube[x]);
+    std::vector<char3d> results;
+    char3d cube1 = char3d(xlen(cube));
+    for (u32 x = 0; x < xlen(cube1); ++x) cube1[x] = rot0(cube[x]);
+    char3d cube2 = char3d(xlen(cube));
+    for (u32 x = 0; x < xlen(cube2); ++x) cube2[x] = rot90(cube[x]);
+    char3d cube3 = char3d(xlen(cube));
+    for (u32 x = 0; x < xlen(cube3); ++x) cube3[x] = rot180(cube[x]);
+    char3d cube4 = char3d(xlen(cube));
+    for (u32 x = 0; x < xlen(cube4); ++x) cube4[x] = rot270(cube[x]);
     results.push_back(cube1);
     results.push_back(cube2);
     results.push_back(cube3);
@@ -116,17 +108,85 @@ std::vector<CUBE> all_rots(CUBE& cube) // get all rotations of a 2d array
     return results;
 }
 
-std::vector<CUBE> compute_rotations(CUBE& cube) // get all 24 rotations
+std::vector<char3d> compute_rotations(char3d& cube) // get all 24 rotations
 {
-    u32 X = cube.cube.size();
-    u32 Y = cube.cube[0].size();
-    u32 Z = cube.cube[0][0].size();
-    // TODO
+    u32 X = xlen(cube);
+    u32 Y = ylen(cube);
+    u32 Z = zlen(cube);
+    u32 x, y, z;
+    std::vector<char3d> results = all_rots(cube);
+    char3d cube2 = new_cube(Y,Z,X); // initialize cube rotations
+    char3d cube3 = new_cube(Z,X,Y);
+    char3d cube4 = new_cube(Z,Y,X);
+    char3d cube5 = new_cube(Y,X,Z);
+    char3d cube6 = new_cube(X,Z,Y);
+    for (x = 0; x < Y; ++x) // rotate cube
+        for (y = 0; y < Z; ++y)
+            for (z = 0; z < X; ++z)
+                cube2[x][y][z] = cube[z][x][y];
+    for (x = 0; x < Z; ++x)
+        for (y = 0; y < X; ++y)
+            for (z = 0; z < Y; ++z)
+                cube3[x][y][z] = cube[y][z][x];
+    for (x = 0; x < Z; ++x)
+        for (y = 0; y < Y; ++y)
+            for (z = 0; z < X; ++z)
+                cube4[x][y][z] = cube[X-1-z][Y-1-y][Z-1-x];
+    for (x = 0; x < Y; ++x)
+        for (y = 0; y < X; ++y)
+            for (z = 0; z < Z; ++z)
+                cube5[x][y][z] = cube[X-1-y][Y-1-x][Z-1-z];
+    for (x = 0; x < X; ++x)
+        for (y = 0; y < Z; ++y)
+            for (z = 0; z < Y; ++z)
+                cube6[x][y][z] = cube[X-1-x][Y-1-z][Z-1-y];
+    std::vector<char3d> rot2 = all_rots(cube2); // generate rotations
+    std::vector<char3d> rot3 = all_rots(cube3);
+    std::vector<char3d> rot4 = all_rots(cube4);
+    std::vector<char3d> rot5 = all_rots(cube5);
+    std::vector<char3d> rot6 = all_rots(cube6);
+    results.insert(results.end(),rot2.begin(),rot2.end()); // combine results
+    results.insert(results.end(),rot3.begin(),rot3.end());
+    results.insert(results.end(),rot4.begin(),rot4.end());
+    results.insert(results.end(),rot5.begin(),rot5.end());
+    results.insert(results.end(),rot6.begin(),rot6.end());
+    return results;
+}
+
+std::vector<char3d> dedup(std::vector<char3d>& l)
+{
+    auto l2 = std::vector<char3d>();
+    for (char3d cube : l)
+    {
+        bool in_l2 = false;
+        for (char3d cube2 : l2)
+            if (cube == cube2)
+            {
+                in_l2 = true;
+                break;
+            }
+        if (not in_l2) l2.push_back(cube);
+    }
+    return l2;
 }
 
 void initialize_blocks() // generate block orientation data
 {
-    ;
+    std::vector<char3d> rotA, rotB, rotC, rotD, rotE, rotF, rotG;
+    rotA = compute_rotations(A0);
+    rotB = compute_rotations(B0);
+    rotC = compute_rotations(C0);
+    rotD = compute_rotations(D0);
+    rotE = compute_rotations(E0);
+    rotF = compute_rotations(F0);
+    rotG = compute_rotations(G0);
+    A = dedup(rotA);
+    B = dedup(rotB);
+    C = dedup(rotC);
+    D = dedup(rotD);
+    E = dedup(rotE);
+    F = dedup(rotF);
+    G = dedup(rotG);
 }
 
 void _validate_cube_input(std::string& s) // input should only have "a" block
@@ -135,11 +195,13 @@ void _validate_cube_input(std::string& s) // input should only have "a" block
         assert(c == '.' or c == 'a');
 }
 
-std::vector<CUBE> initial_solutions;
+std::vector<char3d> initial_solutions;
+char3d rec_cube;
 
 void find_solutions_a()
 {
-    ;
+    printf("%lu %lu %lu %lu %lu %lu %lu\n",A.size(),B.size(),C.size(),
+                                    D.size(),E.size(),F.size(),G.size());
 }
 
 int main(int argc, char **argv)
@@ -147,9 +209,9 @@ int main(int argc, char **argv)
     initialize_blocks();
     // compute all solutions with an initial configuration of the "a" piece
     std::string initial = "aaaa.......................";
-    CUBE cube = decode(initial);
+    rec_cube = decode(initial);
     initial_solutions.clear();
-    find_solutions_a();
+    find_solutions_a(); // begin recursion to find solutions
     // hard coded check for number of solutions, believed to be 480
     assert(initial_solutions.size() == 480);
     // TODO compute all rotations for solutions
