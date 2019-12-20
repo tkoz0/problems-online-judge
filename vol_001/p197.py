@@ -1,7 +1,8 @@
 import sys
+from functools import reduce
 
 # split string into equal length parts
-def split(s,n): return [s[i:i+n] for n in range(0,len(s),n)]
+def split(s,n): return [s[i:i+n] for i in range(0,len(s),n)]
 
 def decode(s): # 27 char string to cube (3x3x3 array)
     assert len(s) == 27
@@ -23,15 +24,12 @@ g0 = [[['.','.'],['g','g']],[['.','g'],['.','g']]]
 
 def rot0(flat):
     return [row[:] for row in flat]
-
 def rot90(flat):
     return [ [ flat[c][len(flat[0])-1-r]
                for c in range(len(flat))]
              for r in range(len(flat[0]))]
-
 def rot180(flat):
     return [r[::-1] for r in flat[::-1]]
-
 def rot270(flat):
     return [ [ flat[len(flat)-1-c][r]
                for c in range(len(flat))]
@@ -72,6 +70,38 @@ def dedup(l): # since lists arent hashable, just use a O(n^2) loop
         if not (e in l2): l2.append(e)
     return l2
 
+def flatX0(cube): return cube[0]
+def flatX1(cube): return cube[len(cube)-1]
+def flatY0(cube): return [[cube[x][0][z] for z in range(len(cube[0][0]))]
+                          for x in range(len(cube))]
+def flatY1(cube): return [[cube[x][len(cube[0])-1][z]
+                           for z in range(len(cube[0][0]))]
+                          for x in range(len(cube))]
+def flatZ0(cube): return [[cube[x][y][0] for y in range(len(cube[0]))]
+                          for x in range(len(cube))]
+def flatZ1(cube): return [[cube[x][y][len(cube[0][0])-1]
+                           for y in range(len(cube[0]))]
+                          for x in range(len(cube))]
+def flatEmpty(flat): return reduce(lambda x,y:x|y,[set(r) for r in flat]) \
+                            == set('.')
+def truncate(cube): # remove empty faces, assumes cube is nonempty
+    while flatEmpty(flatX0(cube)): cube = cube[1:]
+    while flatEmpty(flatX1(cube)): cube = cube[:-1]
+    while flatEmpty(flatY0(cube)):
+        cube = [[[cube[x][y][z] for z in range(len(cube[0][0]))]
+                  for y in range(1,len(cube[0]))] for x in range(len(cube))]
+    while flatEmpty(flatY1(cube)):
+        cube = [[[cube[x][y][z] for z in range(len(cube[0][0]))]
+                  for y in range(len(cube[0])-1)] for x in range(len(cube))]
+    while flatEmpty(flatZ0(cube)):
+        cube = [[cube[x][y][1:] for y in range(len(cube[0]))]
+                for x in range(len(cube))]
+    while flatEmpty(flatZ1(cube)):
+        cube = [[cube[x][y][:-1] for y in range(len(cube[0]))]
+                for x in range(len(cube))]
+    return cube
+
+# all possible unique rotations for each piece
 a = dedup(compute_rotations(a0))
 b = dedup(compute_rotations(b0))
 c = dedup(compute_rotations(c0))
@@ -83,20 +113,62 @@ g = dedup(compute_rotations(g0))
 cube = None
 solutions = None
 
-def find_solutions(block): # recursively pick places for a block
+def place_block(x0,y0,z0,block): # adds block to position, return successful
+    global cube
+    X, Y, Z = len(block), len(block[0]), len(block[0][0])
+    if x0 + X > 3 or y0 + Y > 3 or z0 + Z > 3: return False # out of bounds
+    for x in range(X):
+        for y in range(Y):
+            for z in range(Z):
+                if block[x][y][z] != '.' and cube[x0+x][y0+y][z0+z] != '.':
+                    return False # cannot overwrite occupied space
+    for x in range(X):
+        for y in range(Y):
+            for z in range(Z):
+                if block[x][y][z] != '.':
+                    cube[x0+x][y0+y][z0+z] = block[x][y][z]
+    return True
+
+def remove_block(x0,y0,z0,block): # removes block, assumes it was validly placed
+    global cube
+    X, Y, Z = len(block), len(block[0]), len(block[0][0])
+    for x in range(X):
+        for y in range(Y):
+            for z in range(Z):
+                if block[x][y][z] != '.': cube[x0+x][y0+y][z0+z] = '.'
+
+def find_solutions(block_code): # recursively pick places for a block
     global cube, solutions
-    # TODO place block where possible
-    if block == 'g': # last block, cube completed
+    if block_code == 'h': # placed all blocks, cube complete
         solutions.append(encode(cube))
-    else: find_solutions(chr(ord(block)+1)) # recurse with next letter
-    # TODO backtrack
+    else:
+        # place block, first pick which possibilities for this block code
+        possible = {'b':b,'c':c,'d':d,'e':e,'f':f,'g':g}[block_code]
+        for block in possible: # try each orientation
+            X, Y, Z = len(block), len(block[0]), len(block[0][0])
+            for x0 in range(3+1-X):
+                for y0 in range(3+1-Y):
+                    for z0 in range(3+1-Z):
+                        if place_block(x0,y0,z0,block):
+                            find_solutions(chr(ord(block_code)+1)) # next letter
+                            remove_block(x0,y0,z0,block) # backtrack
 
 def find_solutions_a(): # translate the position of the 'a' block
-    pass
-    find_solutions('b') # recurse on variable position block
+    global cube, solutions
+    a_part = truncate(cube)
+    assert a_part in a
+    X, Y, Z = len(a_part), len(a_part[0]), len(a_part[0][0])
+    for x0 in range(3+1-X): # pick from possible initial start positions
+        for y0 in range(3+1-Y):
+            for z0 in range(3+1-Z): # make blank cube and place "a" piece
+                cube = [[['.']*3,['.']*3,['.']*3],[['.']*3,['.']*3,['.']*3],
+                        [['.']*3,['.']*3,['.']*3]]
+                success = place_block(x0,y0,z0,a_part)
+                assert success # should succeed since cube is empty
+                print('placed a at (%d,%d,%d)'%(x0,y0,z0))
+                find_solutions('b') # recurse on variable position block
 
-print(len(a),len(b),len(c),len(d),len(e),len(f),len(g))
-quit()
+#print('rotation counts',len(a),len(b),len(c),len(d),len(e),len(f),len(g))
 
 for line in sys.stdin:
     assert set(line[:-1]) == set('a.')
@@ -104,4 +176,4 @@ for line in sys.stdin:
     solutions = []
     find_solutions_a()
     print('\n'.join(sorted(solutions)))
-    print()
+    print(len(solutions))
