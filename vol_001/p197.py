@@ -47,27 +47,38 @@ def compute_rotations(cube): # computes all 24 rotations of an array
     X, Y, Z = len(cube), len(cube[0]), len(cube[0][0])
     rot = all_rots(cube)
     # make the other faces touching (0,0,0) to be the "top" face
+    # cube1: cube[x][y][z] for z(Z) for y(Y) for x(X)
     cube2 = [[[cube[z][x][y] for z in range(X)] for y in range(Z)]
              for x in range(Y)]
     cube3 = [[[cube[y][z][x] for z in range(Y)] for y in range(X)]
              for x in range(Z)]
     # make the 3 other faces (touching (X-1,Y-1,Z-1)) to be the "top" face
-    cube4 = []
-    cube5 = []
-    cube6 = []
+    cube4 = [[[cube[X-1-z][Y-1-y][Z-1-x] for z in range(X)] for y in range(Y)]
+             for x in range(Z)]
+    cube5 = [[[cube[X-1-y][Y-1-x][Z-1-z] for z in range(Z)] for y in range(X)]
+             for x in range(Y)]
+    cube6 = [[[cube[X-1-x][Y-1-z][Z-1-y] for z in range(Y)] for y in range(Z)]
+             for x in range(X)]
     rot += all_rots(cube2)
     rot += all_rots(cube3)
     rot += all_rots(cube4)
     rot += all_rots(cube5)
+    rot += all_rots(cube6)
     return rot
 
-a = set(compute_rotations(a0))
-b = set(compute_rotations(b0))
-c = set(compute_rotations(c0))
-d = set(compute_rotations(d0))
-e = set(compute_rotations(e0))
-f = set(compute_rotations(f0))
-g = set(compute_rotations(g0))
+def dedup(l): # since lists arent hashable, just use a O(n^2) loop
+    l2 = []
+    for e in l:
+        if not (e in l2): l2.append(e)
+    return l2
+
+a = dedup(compute_rotations(a0))
+b = dedup(compute_rotations(b0))
+c = dedup(compute_rotations(c0))
+d = dedup(compute_rotations(d0))
+e = dedup(compute_rotations(e0))
+f = dedup(compute_rotations(f0))
+g = dedup(compute_rotations(g0))
 
 cube = None
 solutions = None
@@ -83,6 +94,9 @@ def find_solutions(block): # recursively pick places for a block
 def find_solutions_a(): # translate the position of the 'a' block
     pass
     find_solutions('b') # recurse on variable position block
+
+print(len(a),len(b),len(c),len(d),len(e),len(f),len(g))
+quit()
 
 for line in sys.stdin:
     assert set(line[:-1]) == set('a.')
