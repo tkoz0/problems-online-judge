@@ -252,7 +252,7 @@ void _print_piece(const char3d& p)
 }
 
 std::vector<char3d> initial_solutions;
-char3d rec_cube;
+char3d rec_cube; // cube used for the recursive solution finding
 
 bool place_block(u32 x0, u32 y0, u32 z0, const char3d& block)
 {
@@ -350,16 +350,36 @@ int main(int argc, char **argv)
     rec_cube = decode(initial);
     initial_solutions.clear();
     find_solutions_a(); // begin recursion to find solutions
-printf("%lu\n",initial_solutions.size());
+//printf("%lu\n",initial_solutions.size());
     // hard coded check for number of solutions, believed to be 480
     assert(initial_solutions.size() == 480);
-    // TODO compute all rotations for solutions
+    // compute all rotations for solutions
+    char3d a_piece = truncate(rec_cube);
+    std::vector<char3d> a_piece_rotations = compute_rotations(a_piece);
+    assert(a_piece_rotations.size() == 24);
+    // solutions maps index --> solution strings (corresponding to a_piece)
+    // compute_rotations() always returns the rotations in the same order
+    auto solutions = std::vector<std::vector<std::string> >(24);
+    for (auto solution : initial_solutions)
+    {
+        std::vector<char3d> rotations = compute_rotations(solution);
+        assert(rotations.size() == 24);
+        for (u32 i = 0; i < 24; ++i)
+            solutions[i].push_back(encode(rotations[i]));
+    }
     // process input
+//printf("done\n");
     std::string line;
     while (std::getline(std::cin,line)) // based on "a" position, get solutions
     {
         _validate_cube_input(line);
-        // TODO determine orientation of "a" block, use to get solutions
+        // truncate input cube to get a_piece orientation, use to find solutions
+        a_piece = truncate(decode(line));
+        for (u32 i = 0; i < 24; ++i)
+            if (a_piece == a_piece_rotations[i])
+                for (std::string sol : solutions[i])
+                    printf("%s\n",sol.c_str());
+        printf("\n");
     }
     return 0;
 }
