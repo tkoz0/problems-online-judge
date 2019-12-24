@@ -25,6 +25,9 @@ inline i32 gcd(i32 a, i32 b)
     return a;
 }
 
+// TODO answer4() use the soltion based on sorting points (y then x) and
+// try each point as a pivot and sort points by angle around the pivot
+
 inline std::pair<i32,i32> slope(std::pair<i32,i32> p, std::pair<i32,i32> q)
 {
     i32 dx = q.first - p.first;
