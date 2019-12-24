@@ -6,8 +6,74 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 typedef uint32_t u32;
 typedef int32_t i32;
+
+inline i32 gcd(i32 a, i32 b)
+{
+    if (a < 0) a = -a;
+    if (b < 0) b = -b;
+    if (a < b) std::swap(a,b);
+    while (b)
+    {
+        i32 t = a%b;
+        a = b;
+        b = t;
+    }
+    return a;
+}
+
+inline std::pair<i32,i32> slope(std::pair<i32,i32> p, std::pair<i32,i32> q)
+{
+    i32 dx = q.first - p.first;
+    i32 dy = q.second - p.second;
+    if (dx == 0) return std::make_pair(0,1);
+    i32 g = gcd(dx,dy);
+    dx /= g;
+    dy /= g;
+    if (dx < 0) dx = -dx, dy = -dy;
+    return std::make_pair(dx,dy);
+}
+
+struct hash
+{
+    inline size_t operator()(std::pair<i32,i32> p) const
+    {
+        return (p.first << 16) | p.second;
+    }
+};
+
+typedef std::unordered_set<std::pair<i32,i32>,hash> point_set;
+typedef std::unordered_map<std::pair<i32,i32>,point_set,hash> slope_to_points;
+
+u32 answer2(std::vector<std::pair<i32,i32> >& points)
+{
+    std::vector<slope_to_points> linesets(points.size());
+    for (u32 i = 1; i < points.size(); ++i)
+        for (u32 j = 0; j < i; ++j)
+        {
+            std::pair<i32,i32> s = slope(points[i],points[j]);
+            if (linesets[j].find(s) != linesets[j].end())
+            {
+                linesets[j][s].insert(points[i]);
+                linesets[i][s] = linesets[j][s];
+            }
+            else
+            {
+                linesets[j][s] = point_set();
+                linesets[j][s].insert(points[i]);
+                linesets[j][s].insert(points[j]);
+                linesets[i][s] = linesets[j][s];
+            }
+        }
+    u32 best = 0;
+    for (auto s2p : linesets)
+        for (auto itr = s2p.begin(); itr != s2p.end(); ++itr)
+            best = std::max(best,(u32)itr->second.size());
+    return best;
+}
 
 u32 answer(std::vector<std::pair<i32,i32> >& points)
 {
@@ -59,6 +125,7 @@ int main(int argc, char **argv)
         assert(points.size() > 0);
         if (case_ != 0) printf("\n");
         printf("%u\n",answer(points));
+//        printf("%u\n",answer2(points));
     }
     return 0;
 }
