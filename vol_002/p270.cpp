@@ -41,13 +41,70 @@ struct hash
 {
     inline size_t operator()(std::pair<i32,i32> p) const
     {
-        return (p.first << 16) | p.second;
+        return p.first ^ p.second;
+    }
+};
+
+// uniquely represent line, a,b are not both zero
+// if a!=0 pick a postive, otherwise pick b positive
+struct line
+{
+    i32 a,b,c;
+    bool operator==(const line& l) const
+    {
+        return a == l.a and b == l.b and c == l.c;
+    }
+};
+
+struct line_hash
+{
+    inline size_t operator()(line l) const
+    {
+        return l.a ^ l.b ^ l.c;
     }
 };
 
 typedef std::unordered_set<std::pair<i32,i32>,hash> point_set;
+
+u32 answer3(std::vector<std::pair<i32,i32> >& points)
+{
+    std::unordered_map<line,point_set,line_hash> lines;
+    i32 a,b,c,g;
+    for (u32 i = 1; i < points.size(); ++i)
+        for (u32 j = 0; j < i; ++j)
+        {
+            // taken from first solution
+            a = points[j].second - points[i].second;
+            b = points[i].first - points[j].first;
+            c = points[i].first * points[j].second
+              - points[j].first * points[i].second;
+            g = gcd(gcd(a,b),c); // since a,b not both zero
+            a /= g;
+            b /= g;
+            c /= g;
+            if (a == 0) // pick b to be positive
+            {
+                if (b < 0) b = -b, c = -c;
+            }
+            else if (a < 0) a = -a, b = -b, c = -c; // pick a positive
+            line l = {a,b,c};
+            if (lines.find(l) != lines.end()) lines[l].insert(points[i]);
+            else
+            {
+                lines[l] = point_set();
+                lines[l].insert(points[i]);
+                lines[l].insert(points[j]);
+            }
+        }
+    u32 best = 0;
+    for (auto itr = lines.begin(); itr != lines.end(); ++itr)
+        best = std::max(best,(u32)itr->second.size());
+    return best;
+}
+
 typedef std::unordered_map<std::pair<i32,i32>,point_set,hash> slope_to_points;
 
+// this is too slow for the online judge
 u32 answer2(std::vector<std::pair<i32,i32> >& points)
 {
     std::vector<slope_to_points> linesets(points.size());
@@ -124,8 +181,9 @@ int main(int argc, char **argv)
         }
         assert(points.size() > 0);
         if (case_ != 0) printf("\n");
-        printf("%u\n",answer(points));
+//        printf("%u\n",answer(points));
 //        printf("%u\n",answer2(points));
+        printf("%u\n",answer3(points));
     }
     return 0;
 }
