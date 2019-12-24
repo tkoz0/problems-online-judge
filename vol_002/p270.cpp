@@ -8,6 +8,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <algorithm>
 typedef uint32_t u32;
 typedef int32_t i32;
 
@@ -25,8 +26,50 @@ inline i32 gcd(i32 a, i32 b)
     return a;
 }
 
-// TODO answer4() use the soltion based on sorting points (y then x) and
-// try each point as a pivot and sort points by angle around the pivot
+u32 answer4(std::vector<std::pair<i32,i32> >& points)
+{
+    // sort points by x, then y
+    std::sort(points.begin(),points.end(),
+            [](const std::pair<i32,i32>& a, const std::pair<i32,i32>& b)
+            {
+                if (a.first != b.first) return a.first < b.first;
+                return a.second < b.second;
+            });
+    u32 best = 0;
+    for (auto pivot = points.begin(); pivot != points.end(); ++pivot)
+    {
+        // sort the points that come after by angle (-pi/2 < theta <= pi/2)
+        std::vector<std::pair<i32,i32> > others(pivot+1,points.end());
+        std::sort(others.begin(),others.end(),
+            [&pivot](const std::pair<i32,i32>& a, const std::pair<i32,i32>& b)
+            {
+                i32 a_dx = a.first - pivot->first;
+                i32 a_dy = a.second - pivot->second;
+                i32 b_dx = b.first - pivot->first;
+                i32 b_dy = b.second - pivot->second;
+                if (a_dx == 0) return false; // pi/2 angle, must be last
+                if (b_dx == 0) return true;
+                assert(a_dx > 0 and b_dx > 0);
+                // arctan args are a_dy/a_dx and b_dy/b_dx
+                // to check a_dy/a_dx < b_dy/b_dx, use b_dx*a_dy < a_dx*b_dy
+                return b_dx*a_dy < a_dx*b_dy;
+            });
+        // linear check over others vector
+        auto itr = others.begin();
+        while (itr != others.end())
+        {
+            // form line with pivot and itr (ax+by=c)
+            i32 a = itr->second - pivot->second;
+            i32 b = pivot->first - itr->first;
+            i32 c = pivot->first*itr->second - itr->first*pivot->second;
+            u32 count = 0; // count points on the line
+            while (itr != others.end() and a*itr->first + b*itr->second == c)
+                ++itr, ++count;
+            best = std::max(best,count);
+        }
+    }
+    return best+1; // add 1 since pivot itself was not counted
+}
 
 inline std::pair<i32,i32> slope(std::pair<i32,i32> p, std::pair<i32,i32> q)
 {
@@ -186,7 +229,8 @@ int main(int argc, char **argv)
         if (case_ != 0) printf("\n");
 //        printf("%u\n",answer(points));
 //        printf("%u\n",answer2(points));
-        printf("%u\n",answer3(points));
+//        printf("%u\n",answer3(points));
+        printf("%u\n",answer4(points));
     }
     return 0;
 }
