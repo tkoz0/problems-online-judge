@@ -11,7 +11,8 @@ typedef int32_t i32;
 
 u32 answer(std::vector<std::pair<i32,i32> >& points)
 {
-    u32 i,j,k,a,b,c,count,best;
+    u32 i,j,k,count,best;
+    i32 a,b,c;
     best = 0;
     if (points.size() < 2) return points.size();
     for (i = 0; i < points.size(); ++i)
